@@ -1,0 +1,329 @@
+body {
+  font-family: 'Poppins', sans-serif;
+    
+}
+.date-filter-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    position: relative;
+    
+  }
+  
+  .select-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+  }
+  
+  .select-button:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+  }
+  
+  .select-button svg {
+    width: 20px;
+    height: 20px;
+    color: #64748b;
+  }
+  
+  .action-buttons {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
+  }
+  
+  .action-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .download-button {
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+  }
+  
+  .download-button:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+  
+  .import-button {
+    background: #0ea5e9;
+    border: 1px solid #0ea5e9;
+    color: white;
+  }
+  
+  .import-button:hover {
+    background: #0284c7;
+    border-color: #0284c7;
+  }
+  
+  .date-selector {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    z-index: 10;
+    width: 400px;
+  }
+  
+  .date-selector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .date-selector-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+   
+    color: #1e293b;
+  }
+  
+  .close-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: #64748b;
+  }
+  
+  .date-section {
+    margin-bottom: 24px;
+  }
+  
+  .date-section-label {
+    font-size: 12px;
+  color: #64748b;
+  margin-bottom: 8px;
+  font-weight: 500;
+  }
+  
+  .date-inputs {
+    display: flex;
+    gap: 12px;
+  }
+  
+  .date-dropdown {
+    flex: 1;
+    position: relative;
+  }
+  
+  .date-dropdown select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #64748b;
+    background: white;
+    cursor: pointer;
+    appearance: none;
+  }
+  
+  .date-dropdown::after {
+    content: '';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #64748b;
+    pointer-events: none;
+  }
+  
+  .date-selector-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+  
+  .date-selector-button {
+    padding: 10px 24px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: bold;
+  }
+  
+  .cancel-button {
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+  }
+  
+  .cancel-button:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+  
+  .apply-button {
+    background: #0ea5e9;
+    border: none;
+    color: white;
+  }
+  
+  .apply-button:hover {
+    background: #0284c7;
+  }
+  
+  /* FilterButton.css */
+
+.filter-container {
+  position: relative;
+}
+
+.filter-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.filter-button:hover {
+  background-color: #f9f9f9;
+}
+
+.filter-icon, .arrow-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.arrow-icon {
+  margin-left: 8px;
+}
+
+.filter-dropdown {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  width: 300px;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.filter-content {
+  padding: 16px;
+}
+
+.filter-section {
+  margin-bottom: 24px;
+}
+
+.filter-header {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.filter-option input[type="radio"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid #d0d0d0;
+  border-radius: 50%;
+  outline: none;
+  cursor: pointer;
+}
+
+.filter-option input[type="radio"]:checked {
+  border: 5px solid #4c84ff;
+  background-color: white;
+}
+
+.filter-option span {
+  font-size: 14px;
+  color: #555;
+}
+
+.filter-buttons {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+  gap: 1rem;
+}
+
+.cancel-button, .submit-button,.clear-button {
+  padding: 8px 15px;
+  border-radius: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.cancel-button ,.clear-button {
+  background-color: white;
+  border: 1px solid #d0d0d0;
+  color: #555;
+}
+
+.submit-button {
+  background: #0ea5e9;
+  border: none;
+  color: white;
+}
+
+.cancel-button:hover {
+  background-color: #f9f9f9;
+}
+
+.submit-button:hover {
+  background: #0284c7;
+}

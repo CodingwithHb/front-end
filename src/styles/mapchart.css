@@ -1,0 +1,99 @@
+.map-container {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+ 
+  /* Hide horizontal scroll if the zoomed map is wider */
+  overflow-x: hidden;
+  height: 400px;
+ 
+}
+
+
+.map-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.map-tooltip {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.map-legend {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.color-box {
+  width: 12px;
+  height: 12px;
+  border: 1px solid #ccc;
+}
+
+.gradient-legend {
+  width: 150px;
+  height: 12px;
+  margin: 0 auto;
+  border: 1px solid #ccc;
+  background: linear-gradient(to right, #D3D3D3, #FF5733);
+}
+
+/* --------------- MODAL STYLES --------------- */
+
+/* The overlay covers only the map-container area */
+.modal-overlay {
+  position: absolute;  /* instead of fixed */
+  top: 0;
+  left: 0;
+
+  /* match the map-container's size */
+  width: 100%;
+  height: 100%;
+
+  background-color: rgba(0,0,0,0.4);
+
+  /* center the modal content within this overlay */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  /* ensure it's above the map */
+  z-index: 999;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  width: 400px;
+  max-height: 80vh;
+  overflow-y: auto; /* scroll if the content is tall */
+  position: relative;
+}
+
+.close-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+}

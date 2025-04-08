@@ -1,0 +1,34 @@
+.nodata-container {
+    width: 50%;
+    height: 250px;
+    border-radius: 16px;
+    background: white;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1.4px dashed #7fa0e8;
+    box-shadow: 5px 5px 5px #7fa0e8;
+    text-align: center;
+    margin: 0 auto;  /* This centers the container horizontally */
+}
+
+
+.nodata-content p {
+    font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+.nodata-content h1 {
+    font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+}
+.nodata-content{
+    margin-top: 2rem;
+}

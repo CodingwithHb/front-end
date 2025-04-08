@@ -1,25 +1,35 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from 'react'
+import Import from './components/import'
+import Header from './components/header'
+import DateFilter from './components/filter'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import Dashboard from './components/dashboard'
+import axios from 'axios'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchOrders } from './redux/actions'
 
 function App() {
+ 
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+      dispatch(fetchOrders()); // Déclenche la récupération des données
+    }, [dispatch]);
+const { orders, sku, loading, error } = useSelector(state => state);
+    
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    <BrowserRouter >
+       <Routes>
+      
+          <Route path="/" element={<Import />} />
+          <Route path="/dashboard" element={<Dashboard    />} /> 
+         
+       </Routes>
+       
+
+    </BrowserRouter>
+    
+  )
 }
 
-export default App;
+export default App
