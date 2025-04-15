@@ -78,7 +78,7 @@ function Chart() {
         ]}
         tooltipProps={{ shared: true, content: CustomTooltip }}
         barSize={40}
-        yAxisProps={{ domain: [0, 100], tickInterval: 5 }}
+        yAxisProps={{ domain: [0, 1000], tickInterval: 5 }}
         tickLine="y"
         style={{
           overflow: 'visible',

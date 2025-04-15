@@ -1,5 +1,3 @@
-// Updated GenderChart with PeriodSelector instead of YearSelector
-
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { LineChart } from '@mantine/charts'
@@ -19,16 +17,19 @@ export function GenderChart() {
     { day: 31, month: 11, year: dayjs().year() },
   ])
 
+  // Build start and end dates from the selected period.
   const startDate = dayjs(`${selectedPeriod[0].year}-${selectedPeriod[0].month + 1}-${selectedPeriod[0].day}`)
   const endDate = dayjs(`${selectedPeriod[1].year}-${selectedPeriod[1].month + 1}-${selectedPeriod[1].day}`)
 
+  // Prepare monthly buckets for the chart.
   const months = Array.from({ length: 12 }, (_, i) => dayjs().month(i).format('MMM'))
   const genderMonthlyData = months.reduce((acc, month) => {
     acc[month] = { Male: 0, Female: 0 }
     return acc
   }, {})
 
-  orders.forEach(order => {
+  // Loop through orders and tally gender per month.
+  orders.forEach((order) => {
     const { gender, delivered_date, return_date, shipped_at } = order
     const date = delivered_date || return_date || shipped_at
     if (!gender || !date) return
@@ -36,20 +37,25 @@ export function GenderChart() {
     const orderDate = dayjs(date)
     if (!orderDate.isSameOrAfter(startDate) || !orderDate.isSameOrBefore(endDate)) return
 
-    const month = dayjs(date).format('MMM')
-    if (gender === 'male') {
+    const month = orderDate.format('MMM')
+    // Convert gender to lowercase for a case-insensitive comparison.
+    const lowerGender = gender.toLowerCase()
+
+    if (lowerGender === 'male') {
       genderMonthlyData[month].Male++
-    } else if (gender === 'female') {
+    } else if (lowerGender === 'female') {
       genderMonthlyData[month].Female++
     }
   })
 
-  const chartData = months.map(month => ({
+  // Map the aggregated data into the format expected by the LineChart.
+  const chartData = months.map((month) => ({
     month,
     Male: genderMonthlyData[month].Male,
     Female: genderMonthlyData[month].Female,
   }))
 
+  // Custom tooltip component for the chart.
   const CustomTooltip = ({ label, payload }) => {
     if (!payload || payload.length === 0) return null
     return (
@@ -77,17 +83,16 @@ export function GenderChart() {
           { name: 'Female', color: '#EB5757' },
         ]}
         tooltipProps={{ shared: true, content: CustomTooltip }}
-        
         yAxisProps={{
           domain: [0, 100],
-          tickInterval: 10
+          tickInterval: 10,
         }}
         curveType="linear"
         style={{
           overflow: 'visible',
           '--chart-cursor-fill': '#e5e1e1',
           '--chart-grid-color': 'gray',
-          '--chart-text-color': 'gray'
+          '--chart-text-color': 'gray',
         }}
       />
       <div className="manual-legend">
