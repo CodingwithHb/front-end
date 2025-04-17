@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useSelector } from 'react-redux';
 import { BarChart } from '@mantine/charts';
 import dayjs from 'dayjs';
@@ -9,156 +9,120 @@ import '../styles/skuchart.css';
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-function SKUChart() {
+export default function SKUChart() {
   // 1) Récupération des données & filtres
-  const orders = useSelector((state) => state.orders);
-  const filterSku = useSelector((state) => state.filterSku);
-  const filterGender = useSelector((state) => state.filterGender);
-  const filterStatus = useSelector((state) => state.filterStatus);
+  const orders          = useSelector((state) => state.orders);
+  const filterSku       = useSelector((state) => state.filterSku);
+  const filterGender    = useSelector((state) => state.filterGender);
+  const filterStatus    = useSelector((state) => state.filterStatus);
   const filterStartDate = useSelector((state) => state.filterStartDate);
   const filterEndDate   = useSelector((state) => state.filterEndDate);
 
-  // 2) Logs initiaux
-  console.log('--- [SKUChart] Filters ---');
-  console.log('SKU:', filterSku, '| Gender:', filterGender, '| Status:', filterStatus);
-  console.log('Date Range:', filterStartDate, '->', filterEndDate);
-  console.log('orders.length =', orders.length);
-
-  // 3) Conversion en dayjs
+  // 2) Conversion en dayjs
   const startDate = dayjs(filterStartDate);
   const endDate   = dayjs(filterEndDate);
 
-  // 4) Filtrer par date
-  const filteredByDate = orders.filter((order, idx) => {
+  // 3) Filtrer par date
+  const filteredByDate = orders.filter((order) => {
     const rawDate = order.delivered_date || order.return_date || order.shipped_at;
-    if (!rawDate) {
-      console.log(`[SKUChart #${idx}] Pas de date -> exclu`);
-      return false;
-    }
-
-    const orderDate = dayjs(rawDate);
-    console.log(`[SKUChart #${idx}] rawDate="${rawDate}" => parsed="${orderDate.format()}"`);
-    return orderDate.isSameOrAfter(startDate) && orderDate.isSameOrBefore(endDate);
+    if (!rawDate) return false;
+    const d = dayjs(rawDate);
+    return d.isSameOrAfter(startDate) && d.isSameOrBefore(endDate);
   });
-  console.log('filteredByDate.length =', filteredByDate.length);
 
-  // 5) Filtrer par SKU, Gender, Status
-  const globalFilteredOrders = filteredByDate.filter((order, idx) => {
-    if (filterSku !== 'All' && order.sku !== filterSku) return false;
+  // 4) Filtrer par SKU, Genre, Statut (global)
+  const globalFiltered = filteredByDate.filter((order) => {
+    if (filterSku    !== 'All' && order.sku      !== filterSku)    return false;
     if (filterGender !== 'All' && order.gender?.toLowerCase() !== filterGender.toLowerCase()) return false;
-    if (filterStatus !== 'All' && order.status !== filterStatus) return false;
+    if (filterStatus !== 'All' && order.status   !== filterStatus) return false;
     return true;
   });
-  console.log('globalFilteredOrders.length =', globalFilteredOrders.length);
 
-  // 6) Logique locale de sélection SKU (vous aviez un second filtrage local, on garde le concept)
-  const [selectedSku, setSelectedSku] = useState('All');
+  // 5) Listes auxiliaires
+  const months      = Array.from({ length: 12 }, (_, i) => dayjs().month(i).format('MMM'));
+  const uniqueSkus  = [...new Set(globalFiltered.map(o => o.sku))];
+  const uniqueYears = Array.from(
+    new Set(
+      globalFiltered.map((o) => dayjs(o.delivered_date||o.return_date||o.shipped_at).year())
+    )
+  ).sort();
+  const colorPalette = ['#003f5c','#58508d','#bc5090','#ff6361','#ffa600','#26547D','#EF476F','#06D6A0','#FFD166'];
 
-  // 7) Préparer l'agrégation par mois / SKU
-  const months = Array.from({ length: 12 }, (_, i) => dayjs().month(i).format('MMM'));
-  const skuMonthlyData = months.reduce((acc, month) => {
-    acc[month] = {};
-    return acc;
-  }, {});
-
-  globalFilteredOrders.forEach((order, idx) => {
-    const { sku } = order;
-    const rawDate = order.delivered_date || order.return_date || order.shipped_at;
-    if (!sku || !rawDate) return;
-
-    const month = dayjs(rawDate).format('MMM');
-    if (!skuMonthlyData[month][sku]) {
-      skuMonthlyData[month][sku] = 0;
-    }
-    skuMonthlyData[month][sku]++;
+  // 6) Agrégation mois→SKU pour vue
+  const skuMonthlyData = months.reduce((acc, m) => ({ ...acc, [m]: {} }), {});
+  globalFiltered.forEach((order) => {
+    const m = dayjs(order.delivered_date||order.return_date||order.shipped_at).format('MMM');
+    const sku = order.sku;
+    if (!sku) return;
+    skuMonthlyData[m][sku] = (skuMonthlyData[m][sku]||0) + 1;
   });
 
-  // 8) Construire le chartData
-  const chartData = months.map(month => {
-    const entry = { month };
-    Object.keys(skuMonthlyData[month]).forEach(oneSku => {
-      entry[oneSku] = skuMonthlyData[month][oneSku];
-    });
-    return entry;
+  // 7) Construire chartData et séries (toujours par SKU)
+  const chartData = months.map(m => {
+    const obj = { month: m };
+    uniqueSkus.forEach(sku => obj[sku] = skuMonthlyData[m][sku] || 0);
+    return obj;
   });
 
-  // 9) Liste des SKUs
-  const uniqueSkus = [...new Set(globalFilteredOrders.map(o => o.sku))];
+  const series = uniqueSkus.map((sku, i) => ({ name: sku, color: colorPalette[i % colorPalette.length] }));
 
-  // 10) Couleurs
-  const colorPalette = [
-    '#003f5c', '#58508d', '#bc5090', '#ff6361', '#ffa600',
-    '#26547D', '#EF476F', '#06D6A0', '#FFD166',
-  ];
-
-  // 11) Séries principales
-  const series = uniqueSkus.map((sku, index) => ({
-    name: sku,
-    color: colorPalette[index % colorPalette.length],
-  }));
-
-  // 12) Appliquer la sélection locale (selectedSku)
-  const currentChartData =
-    selectedSku === 'All'
-      ? chartData
-      : chartData.map(data => ({
-          month: data.month,
-          [selectedSku]: data[selectedSku] || 0,
-        }));
-
-  const currentSeries =
-    selectedSku === 'All'
-      ? series
-      : (() => {
-          const idx = uniqueSkus.indexOf(selectedSku);
-          const color = idx >= 0 ? colorPalette[idx % colorPalette.length] : colorPalette[0];
-          return [{ name: selectedSku, color }];
-        })();
-
-  // 13) Tooltip
+  // 8) Tooltip personnalisé: détail par année si un SKU est sélectionné
   const CustomTooltip = ({ label, payload }) => {
     if (!payload || payload.length === 0) return null;
     return (
       <div className="chartTooltip">
         <strong>{label}</strong>
-        {payload.map((entry, i) => (
-          <div key={i} style={{ color: entry.color, marginTop: 5 }}>
-            {entry.name}: <strong>{entry.value} Orders</strong>
-          </div>
-        ))}
+        {filterSku === 'All'
+          ? payload.map((e, i) => (
+              <div key={i} style={{ color: e.color, marginTop: 5 }}>
+                {e.name} : <strong>{e.value} commandes</strong>
+              </div>
+            ))
+          : (
+            <>
+              {/* Total mensuel pour le SKU */}
+              {payload.map((e, i) => (
+                <div key={i} style={{ color: e.color, marginTop: 5 }}>
+                  {filterSku} : <strong>{e.value} commandes</strong>
+                </div>
+              ))}
+              {/* Détail par année */}
+              {uniqueYears.map((y, i) => {
+                const count = globalFiltered.filter(order => {
+                  const raw = order.delivered_date||order.return_date||order.shipped_at;
+                  return order.sku === filterSku &&
+                         dayjs(raw).format('MMM') === label &&
+                         dayjs(raw).year() === y;
+                }).length;
+                return (
+                  <div key={i} style={{ marginLeft: 16, marginTop: 4 }}>
+                    {y} : <strong>{count} commandes</strong>
+                  </div>
+                );
+              })}
+            </>
+          )
+        }
       </div>
     );
   };
 
-  // 14) Rendu
+  // 9) Rendu
   return (
     <div className="chart-container">
-      <h3 className="chart-title">Analyse by SKU</h3>
-
-      
+      <h3 className="chart-title">Analyse par SKU</h3>
       <BarChart
         h={410}
-        data={currentChartData}
+        data={chartData}
         dataKey="month"
-        series={currentSeries}
+        series={series}
         tooltipProps={{ shared: true, content: CustomTooltip }}
-        legendProps={{}}
         barSize={50}
-        yAxisProps={{
-          domain: [0, 100],
-          tickInterval: 10,
-        }}
+        yAxisProps={{ domain: [0, 'dataMax'], tickLine: true }}
         tickLine="y"
-        style={{
-          overflow: 'visible',
-          '--chart-cursor-fill': '#e5e1e1',
-          '--chart-grid-color': 'gray',
-          '--chart-text-color': 'gray',
-        }}
       />
-
       <div className="sku-legend">
-        {currentSeries.map(({ name, color }) => (
+        {series.map(({ name, color }) => (
           <div key={name} className="legend-item">
             <div className="legend-dot" style={{ backgroundColor: color }} />
             <span className="legend-label">{name}</span>
@@ -168,5 +132,3 @@ function SKUChart() {
     </div>
   );
 }
-
-export default SKUChart;

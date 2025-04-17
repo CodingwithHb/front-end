@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useSelector } from 'react-redux';
 import { LineChart } from '@mantine/charts';
 import dayjs from 'dayjs';
@@ -10,122 +10,122 @@ dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
 export function GenderChart() {
-  // 1) Récupération des données et des filtres depuis Redux
+  // Récupération des données et filtres
   const orders = useSelector((state) => state.orders);
-  const filterSku = useSelector((state) => state.filterSku);     
-  const filterGender = useSelector((state) => state.filterGender); 
+  const filterSku = useSelector((state) => state.filterSku);
   const filterStatus = useSelector((state) => state.filterStatus);
+  const filterGender = useSelector((state) => state.filterGender);
   const filterStartDate = useSelector((state) => state.filterStartDate);
-  const filterEndDate   = useSelector((state) => state.filterEndDate);
+  const filterEndDate = useSelector((state) => state.filterEndDate);
 
-  // 2) Logs initiaux
-  console.log('--- [GenderChart] Store filters ---');
-  console.log('SKU:', filterSku, '| Gender:', filterGender, '| Status:', filterStatus);
-  console.log('Date Range:', filterStartDate, '->', filterEndDate);
-  console.log('orders.length =', orders.length);
-
-  // 3) Convertir en dayjs pour le filtrage par date
   const startDate = dayjs(filterStartDate);
-  const endDate   = dayjs(filterEndDate);
+  const endDate = dayjs(filterEndDate);
 
-  // 4) Filtrer par date
-  const filteredByDate = orders.filter((order, idx) => {
-    const rawDate = order.delivered_date || order.return_date || order.shipped_at;
-    if (!rawDate) {
-      console.log(`[GenderChart #${idx}] Pas de date -> exclu`);
-      return false;
-    }
-
-    const orderDate = dayjs(rawDate);
-    console.log(`[GenderChart #${idx}] rawDate="${rawDate}" => parsed="${orderDate.format()}"`);
-    return orderDate.isSameOrAfter(startDate) && orderDate.isSameOrBefore(endDate);
+  // Filtrer par date
+  const filteredByDate = orders.filter(o => {
+    const raw = o.delivered_date || o.return_date || o.shipped_at;
+    return raw && dayjs(raw).isSameOrAfter(startDate) && dayjs(raw).isSameOrBefore(endDate);
   });
-  console.log('filteredByDate.length =', filteredByDate.length);
 
-  // 5) Filtrer par SKU, Status, Gender
-  const finalFilteredOrders = filteredByDate.filter((order, idx) => {
-    if (filterSku !== 'All' && order.sku !== filterSku) return false;
-    if (filterStatus !== 'All' && order.status !== filterStatus) return false;
-    if (filterGender !== 'All' && order.gender?.toLowerCase() !== filterGender.toLowerCase()) {
-      return false;
-    }
+  // Filtrer par SKU, statut et genre
+  const data = filteredByDate.filter(o => {
+    if (filterSku !== 'All' && o.sku !== filterSku) return false;
+    if (filterStatus !== 'All' && o.status !== filterStatus) return false;
+    if (filterGender !== 'All' && o.gender?.toLowerCase() !== filterGender.toLowerCase()) return false;
     return true;
   });
-  console.log('finalFilteredOrders.length =', finalFilteredOrders.length);
 
-  // 6) Construire les buckets mensuels
+  // Axe X: mois simples
   const months = Array.from({ length: 12 }, (_, i) => dayjs().month(i).format('MMM'));
-  const genderMonthlyData = months.reduce((acc, month) => {
-    acc[month] = { Male: 0, Female: 0 };
-    return acc;
-  }, {});
 
-  // 7) Parcourir finalFilteredOrders
-  finalFilteredOrders.forEach((order, idx) => {
-    const { gender, delivered_date, return_date, shipped_at } = order;
-    const date = delivered_date || return_date || shipped_at;
-    if (!gender || !date) return;
+  // Initialiser les totaux
+  const monthly = months.reduce((acc, m) => ({
+    ...acc,
+    [m]: { Male: 0, Female: 0 }
+  }), {});
 
-    const month = dayjs(date).format('MMM');
-    const lowerGender = gender.toLowerCase();
-    if (lowerGender === 'male') {
-      genderMonthlyData[month].Male++;
-    } else if (lowerGender === 'female') {
-      genderMonthlyData[month].Female++;
+  // Remplir les données
+  data.forEach(o => {
+    const d = dayjs(o.delivered_date || o.return_date || o.shipped_at);
+    const m = d.format('MMM');
+    const g = o.gender?.toLowerCase();
+    if (monthly[m]) {
+      if (g === 'male') monthly[m].Male++;
+      else if (g === 'female') monthly[m].Female++;
     }
   });
 
-  // 8) Construire chartData
-  const chartData = months.map((month) => ({
-    month,
-    Male: genderMonthlyData[month].Male,
-    Female: genderMonthlyData[month].Female,
+  // Préparer chartData
+  const chartData = months.map(m => ({
+    month: m,
+    ...monthly[m]
   }));
 
-  // 9) Choix des séries selon filterGender
-  const series = [];
-  if (filterGender === 'All' || filterGender.toLowerCase() === 'male') {
-    series.push({ name: 'Male', color: '#2D9CDB' });
-  }
-  if (filterGender === 'All' || filterGender.toLowerCase() === 'female') {
-    series.push({ name: 'Female', color: '#EB5757' });
-  }
+  // Identifier les années présentes
+  const years = Array.from(
+    new Set(
+      data.map(o => dayjs(o.delivered_date || o.return_date || o.shipped_at).year())
+    )
+  ).sort();
 
-  // 10) Tooltip personnalisé
+  // Séries selon filtre genre
+  const series = [];
+  if (filterGender === 'All' || filterGender.toLowerCase() === 'male') series.push({ name: 'Male', color: '#2D9CDB' });
+  if (filterGender === 'All' || filterGender.toLowerCase() === 'female') series.push({ name: 'Female', color: '#EB5757' });
+
+  // Tooltip personnalisé avec détail par année
   const CustomTooltip = ({ label, payload }) => {
     if (!payload || payload.length === 0) return null;
     return (
       <div className="chartTooltip">
         <strong>{label}</strong>
-        {payload.map((entry, idx) => (
-          <div key={idx} style={{ color: entry.color, marginTop: 5 }}>
-            {entry.name}: <strong>{entry.value} Orders</strong>
-          </div>
-        ))}
+        {payload.map((entry, idx) => {
+          const genderKey = entry.name;
+          return (
+            <React.Fragment key={idx}>
+              <div style={{ color: entry.color, marginTop: 5 }}>
+                {genderKey}: <strong>{entry.value} commandes</strong>
+              </div>
+              {years.map(y => {
+                const count = data.filter(o => {
+                  const d = dayjs(o.delivered_date || o.return_date || o.shipped_at);
+                  return (
+                    o.gender?.toLowerCase() === genderKey.toLowerCase() &&
+                    d.format('MMM') === label &&
+                    d.year() === y
+                  );
+                }).length;
+                if (count === 0) return null;
+                return (
+                  <div key={y} style={{ marginLeft: 16, marginTop: 4 }}>
+                    {y}: <strong>{count} commandes</strong>
+                  </div>
+                );
+              })}
+            </React.Fragment>
+          );
+        })}
       </div>
     );
   };
 
-  // 11) Rendu final
+  // Rendu
   return (
     <div className="chart-container">
-      <h3 className="chart-title">Analyse by Gender</h3>
+      <h3 className="chart-title">Analyse par genre</h3>
       <LineChart
         h={400}
         data={chartData}
         dataKey="month"
         series={series}
         tooltipProps={{ shared: true, content: CustomTooltip }}
-        yAxisProps={{
-          domain: [0, 100],
-          tickInterval: 10,
-        }}
+        yAxisProps={{ domain: [0, 'dataMax'], tickLine: true }}
         curveType="linear"
         style={{
           overflow: 'visible',
           '--chart-cursor-fill': '#e5e1e1',
           '--chart-grid-color': 'gray',
-          '--chart-text-color': 'gray',
+          '--chart-text-color': 'gray'
         }}
       />
       <div className="manual-legend">
@@ -140,4 +140,4 @@ export function GenderChart() {
   );
 }
 
-export default GenderChart;
+export default GenderChart

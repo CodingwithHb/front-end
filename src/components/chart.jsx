@@ -9,107 +9,105 @@ import '../styles/chart.css';
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-function Chart() {
-  // 1) Récupération des données et des filtres dans Redux
+export default function Chart() {
+  // Données et filtres
   const orders = useSelector((state) => state.orders);
   const filterSku = useSelector((state) => state.filterSku);
   const filterGender = useSelector((state) => state.filterGender);
   const filterStatus = useSelector((state) => state.filterStatus);
   const filterStartDate = useSelector((state) => state.filterStartDate);
-  const filterEndDate   = useSelector((state) => state.filterEndDate);
+  const filterEndDate = useSelector((state) => state.filterEndDate);
 
-  // 2) Logs de débogage pour voir ce qui est dans le store
-  console.log('--- Store Filters ---');
-  console.log('SKU:', filterSku, '| Gender:', filterGender, '| Status:', filterStatus);
-  console.log('Date range:', filterStartDate, '->', filterEndDate);
-  console.log('orders.length =', orders.length);
-
-  // 3) Conversion en objets dayjs
   const startDate = dayjs(filterStartDate);
-  const endDate   = dayjs(filterEndDate);
+  const endDate = dayjs(filterEndDate);
 
-  // 4) Filtrage par date
-  const filteredByDate = orders.filter((order, idx) => {
-    // Récupérer la date source
-    const rawDate = order.delivered_date || order.return_date || order.shipped_at;
-    if (!rawDate) {
-      console.log(`[Order #${idx}] Aucune date -> exclu`);
-      return false;
-    }
-
-    // Vérifier la conversion dayjs
-    const orderDate = dayjs(rawDate);
-    console.log(`[Order #${idx}] rawDate="${rawDate}" -> parsed="${orderDate.format()}"`);
-
-    // Appliquer le filtrage
-    return orderDate.isSameOrAfter(startDate) && orderDate.isSameOrBefore(endDate);
+  // Filtrer par date
+  const filteredByDate = orders.filter((o) => {
+    const date = o.delivered_date || o.return_date || o.shipped_at;
+    return date && dayjs(date).isSameOrAfter(startDate) && dayjs(date).isSameOrBefore(endDate);
   });
 
-  console.log('filteredByDate.length =', filteredByDate.length);
-
-  // 5) Filtrage par SKU, Gender, Status
-  const finalFilteredOrders = filteredByDate.filter((order, idx) => {
-    // SKU
-    if (filterSku !== 'All' && order.sku !== filterSku) {
-      return false;
-    }
-    // Gender
-    if (filterGender !== 'All' && order.gender?.toLowerCase() !== filterGender.toLowerCase()) {
-      return false;
-    }
-    // Status
-    if (filterStatus !== 'All' && order.status !== filterStatus) {
-      return false;
-    }
+  // Filtrer selon SKU, genre et statut
+  const data = filteredByDate.filter((o) => {
+    if (filterSku !== 'All' && o.sku !== filterSku) return false;
+    if (filterGender !== 'All' && o.gender?.toLowerCase() !== filterGender.toLowerCase()) return false;
+    if (filterStatus !== 'All' && o.status !== filterStatus) return false;
     return true;
   });
 
-  console.log('finalFilteredOrders.length =', finalFilteredOrders.length);
+  // Axe X : mois simples
+  const months = Array.from({ length: 12 }, (_, i) => dayjs().month(i).format('MMM'));
 
-  // 6) Construire les données pour le BarChart
-  const monthlyData = Array.from({ length: 12 }, (_, index) => ({
-    month: dayjs().month(index).format('MMM'),
-    Delivered: 0,
-    Returned: 0,
-  }));
+  // Initialiser les totaux mensuels
+  const monthlyTotals = months.reduce((acc, m) => ({
+    ...acc,
+    [m]: { Delivered: 0, Returned: 0 }
+  }), {});
 
-  finalFilteredOrders.forEach((order, idx) => {
-    const status = order.status;
-    const date = order.delivered_date || order.return_date || order.shipped_at;
-    if (!date) return;
-
-    const monthIndex = dayjs(date).month();
-    if (status === 'Delivered') {
-      monthlyData[monthIndex].Delivered++;
-    } else if (status === 'Return') {
-      monthlyData[monthIndex].Returned++;
-    }
+  // Compter les commandes
+  data.forEach((o) => {
+    const status = o.status;
+    const d = dayjs(o.delivered_date || o.return_date || o.shipped_at);
+    const m = d.format('MMM');
+    if (!monthlyTotals[m]) return;
+    if (status === 'Delivered') monthlyTotals[m].Delivered++;
+    else if (status === 'Return' || status === 'Returned') monthlyTotals[m].Returned++;
   });
 
-  // 7) Tooltip personnalisé
+  const chartData = months.map((m) => ({
+    month: m,
+    Delivered: monthlyTotals[m].Delivered,
+    Returned: monthlyTotals[m].Returned,
+  }));
+
+  // Années présentes
+  const years = Array.from(new Set(data.map((o) => dayjs(o.delivered_date || o.return_date || o.shipped_at).year()))).sort();
+
+  // Tooltip customisé
   const CustomTooltip = ({ label, payload }) => {
     if (!payload || payload.length === 0) return null;
     return (
       <div className="chartTooltip">
         <strong>{label}</strong>
-        {payload.map((entry, idx) => (
-          <div key={idx} style={{ color: entry.color, marginTop: 5 }}>
-            {entry.name}: <strong>{entry.value} Orders</strong>
-          </div>
-        ))}
+        {payload.map((entry, idx) => {
+          // Mapping entry.name à valeur de status
+          const statusKey = entry.name === 'Returned' ? 'Return' : entry.name;
+          return (
+            <React.Fragment key={idx}>
+              <div style={{ color: entry.color, marginTop: 5 }}>
+                {entry.name}: <strong>{entry.value} commandes</strong>
+              </div>
+              {years.map((y) => {
+                const count = data.filter((o) => {
+                  const d = dayjs(o.delivered_date || o.return_date || o.shipped_at);
+                  return (
+                    // comparer avec statusKey
+                    o.status === statusKey &&
+                    d.format('MMM') === label &&
+                    d.year() === y
+                  );
+                }).length;
+                // N'afficher que si count > 0
+                if (count === 0) return null;
+                return (
+                  <div key={y} style={{ marginLeft: 16, marginTop: 4 }}>
+                    {y}: <strong>{count} commandes</strong>
+                  </div>
+                );
+              })}
+            </React.Fragment>
+          );
+        })}
       </div>
     );
   };
 
-  // 8) Rendu final
   return (
     <div className="chart-container">
-      <h3 className="chart-title">Analyse by status</h3>
-
-      {/* BarChart */}
+      <h3 className="chart-title">Analyse par statut</h3>
       <BarChart
         h={400}
-        data={monthlyData}
+        data={chartData}
         dataKey="month"
         series={[
           { name: 'Delivered', color: '#7dd87d' },
@@ -117,16 +115,15 @@ function Chart() {
         ]}
         tooltipProps={{ shared: true, content: CustomTooltip }}
         barSize={40}
-        yAxisProps={{ domain: [0, 1000], tickInterval: 5 }}
+        yAxisProps={{ domain: [0, 'dataMax'], tickLine: true }}
         tickLine="y"
         style={{
           overflow: 'visible',
           '--chart-cursor-fill': '#e5e1e1',
           '--chart-grid-color': 'gray',
-          '--chart-text-color': 'gray'
+          '--chart-text-color': 'gray',
         }}
       />
-
       <div className="manual-legend">
         <div className="legend-item">
           <div className="legend-dot" style={{ backgroundColor: '#7dd87d' }} />
@@ -140,5 +137,3 @@ function Chart() {
     </div>
   );
 }
-
-export default Chart;
