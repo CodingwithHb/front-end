@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import '../styles/header.css';
-import Filter from './filter';
+
 import { useSelector } from 'react-redux';
+import Filter from './filter';
+import Filtrage from './filtrage';
+
 
 function Header() {
   const [statistics, setStatistics] = useState({});
@@ -39,6 +42,7 @@ function Header() {
   return (
     <div>
       <Filter onStatisticsUpdate={fetchStatistics} statistics={statistics} />
+ 
       <div className="container">
         <div className="statistics-card">
           <img src="/orders.svg" alt="orders" />
@@ -55,7 +59,9 @@ function Header() {
           <h2>Total Orders Returned</h2>
           <p>{statistics.returned_orders?.toLocaleString()}</p>
         </div>
+        <Filtrage />
       </div>
+    
     </div>
   );
 }

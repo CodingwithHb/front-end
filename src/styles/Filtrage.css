@@ -1,0 +1,90 @@
+/* filtrage.css */
+
+/* Container flex qui aligne tout en ligne, y compris la sélection date */
+.filtrage-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-start;
+  
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 16px 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    font-family: sans-serif;
+  }
+  
+  /* Petit bloc pour SKU, Status, Gender */
+  .filtrage-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 120px;
+  }
+  
+  /* Label au-dessus du <select> */
+  .filtrage-item label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  /* Pour le bloc date (From/To) style "bulle" */
+  .period-section {
+    background: #f7f7f7;
+    padding: 8px;
+    border-radius: 12px;
+  
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.05);
+    font-weight: 500;
+  }
+  
+  /* Le label "From"/"To" */
+  .period-section span {
+    color: #333;
+    margin-right: 4px;
+  }
+  
+  /* Les <select> dans la bulle date */
+  .period-section select {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 4px;
+    font-size: 12px;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .period-section select:hover {
+    border-color: #888;
+  }
+  
+  /* Centrer le texte dans le select Année */
+  .period-section .year-select {
+    text-align: center;
+    text-align-last: center;
+  }
+  
+  /* Applique le même style pour tout type de <select> */
+  .filtrage-item select {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 14px;
+    color: #333;
+    transition: border-color 0.2s ease;
+    outline: none;
+    width: 100%;
+  }
+  .filtrage-item select:focus {
+    border-color: #888;
+  }
+  

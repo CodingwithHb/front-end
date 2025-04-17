@@ -12,3 +12,27 @@ export const fetchOrders = () => {
     }
   };
 };
+// actions.js
+export const setDateFilter = (startDate, endDate) => {
+  return {
+    type: 'SET_DATE_FILTER',
+    payload: {
+      startDate,
+      endDate
+    }
+  };
+};
+
+export const setFilters = (sku, gender, status) => {
+  return {
+    type: 'SET_FILTERS',
+    payload: {
+      sku,
+      gender,
+      status
+    },
+  };
+
+  
+};
+

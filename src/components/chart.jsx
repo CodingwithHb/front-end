@@ -1,73 +1,112 @@
-import React, { useState } from 'react'
-import { useSelector } from 'react-redux'
-import { BarChart } from '@mantine/charts'
-import dayjs from 'dayjs'
-import PeriodSelector from './selector' // NEW
-import '../styles/chart.css'
-import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
-import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
+import React from 'react';
+import { useSelector } from 'react-redux';
+import { BarChart } from '@mantine/charts';
+import dayjs from 'dayjs';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import '../styles/chart.css';
 
-dayjs.extend(isSameOrAfter)
-dayjs.extend(isSameOrBefore)
-
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
 
 function Chart() {
-  const orders = useSelector((state) => state.orders)
-  const [selectedPeriod, setSelectedPeriod] = useState([
-    { day: 1, month: 0, year: dayjs().year() },
-    { day: 31, month: 11, year: dayjs().year() }
-  ])
-  
-  const startDate = dayjs(`${selectedPeriod[0].year}-${selectedPeriod[0].month + 1}-${selectedPeriod[0].day}`)
-  const endDate = dayjs(`${selectedPeriod[1].year}-${selectedPeriod[1].month + 1}-${selectedPeriod[1].day}`)
-  
-  const filteredOrders = orders.filter(order => {
-    const rawDate = order.delivered_date || order.return_date || order.shipped_at
-    if (!rawDate) return false
-  
-    const orderDate = dayjs(rawDate)
-    return orderDate.isSameOrAfter(startDate) && orderDate.isSameOrBefore(endDate)
-  })
+  // 1) Récupération des données et des filtres dans Redux
+  const orders = useSelector((state) => state.orders);
+  const filterSku = useSelector((state) => state.filterSku);
+  const filterGender = useSelector((state) => state.filterGender);
+  const filterStatus = useSelector((state) => state.filterStatus);
+  const filterStartDate = useSelector((state) => state.filterStartDate);
+  const filterEndDate   = useSelector((state) => state.filterEndDate);
 
+  // 2) Logs de débogage pour voir ce qui est dans le store
+  console.log('--- Store Filters ---');
+  console.log('SKU:', filterSku, '| Gender:', filterGender, '| Status:', filterStatus);
+  console.log('Date range:', filterStartDate, '->', filterEndDate);
+  console.log('orders.length =', orders.length);
+
+  // 3) Conversion en objets dayjs
+  const startDate = dayjs(filterStartDate);
+  const endDate   = dayjs(filterEndDate);
+
+  // 4) Filtrage par date
+  const filteredByDate = orders.filter((order, idx) => {
+    // Récupérer la date source
+    const rawDate = order.delivered_date || order.return_date || order.shipped_at;
+    if (!rawDate) {
+      console.log(`[Order #${idx}] Aucune date -> exclu`);
+      return false;
+    }
+
+    // Vérifier la conversion dayjs
+    const orderDate = dayjs(rawDate);
+    console.log(`[Order #${idx}] rawDate="${rawDate}" -> parsed="${orderDate.format()}"`);
+
+    // Appliquer le filtrage
+    return orderDate.isSameOrAfter(startDate) && orderDate.isSameOrBefore(endDate);
+  });
+
+  console.log('filteredByDate.length =', filteredByDate.length);
+
+  // 5) Filtrage par SKU, Gender, Status
+  const finalFilteredOrders = filteredByDate.filter((order, idx) => {
+    // SKU
+    if (filterSku !== 'All' && order.sku !== filterSku) {
+      return false;
+    }
+    // Gender
+    if (filterGender !== 'All' && order.gender?.toLowerCase() !== filterGender.toLowerCase()) {
+      return false;
+    }
+    // Status
+    if (filterStatus !== 'All' && order.status !== filterStatus) {
+      return false;
+    }
+    return true;
+  });
+
+  console.log('finalFilteredOrders.length =', finalFilteredOrders.length);
+
+  // 6) Construire les données pour le BarChart
   const monthlyData = Array.from({ length: 12 }, (_, index) => ({
     month: dayjs().month(index).format('MMM'),
     Delivered: 0,
     Returned: 0,
-  }))
+  }));
 
-  filteredOrders.forEach(order => {
-    const status = order.status
-    const date = order.delivered_date || order.return_date || order.shipped_at
-    if (!date) return
+  finalFilteredOrders.forEach((order, idx) => {
+    const status = order.status;
+    const date = order.delivered_date || order.return_date || order.shipped_at;
+    if (!date) return;
 
-    const monthIndex = dayjs(date).month()
+    const monthIndex = dayjs(date).month();
     if (status === 'Delivered') {
-      monthlyData[monthIndex].Delivered++
+      monthlyData[monthIndex].Delivered++;
     } else if (status === 'Return') {
-      monthlyData[monthIndex].Returned++
+      monthlyData[monthIndex].Returned++;
     }
-  })
+  });
 
+  // 7) Tooltip personnalisé
   const CustomTooltip = ({ label, payload }) => {
-    if (!payload || payload.length === 0) return null
+    if (!payload || payload.length === 0) return null;
     return (
       <div className="chartTooltip">
         <strong>{label}</strong>
-        {payload.map((entry, index) => (
-          <div key={index} style={{ color: entry.color, marginTop: 5 }}>
+        {payload.map((entry, idx) => (
+          <div key={idx} style={{ color: entry.color, marginTop: 5 }}>
             {entry.name}: <strong>{entry.value} Orders</strong>
           </div>
         ))}
       </div>
-    )
-  }
+    );
+  };
 
+  // 8) Rendu final
   return (
     <div className="chart-container">
       <h3 className="chart-title">Analyse by status</h3>
 
-      <PeriodSelector  period={selectedPeriod} setPeriod={setSelectedPeriod }  />
-
+      {/* BarChart */}
       <BarChart
         h={400}
         data={monthlyData}
@@ -99,7 +138,7 @@ function Chart() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default Chart
+export default Chart;
