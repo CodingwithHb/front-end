@@ -19,7 +19,8 @@ import {
 import { 
   BarChart2, 
   Info, 
-  Box as BoxIcon 
+  Box as BoxIcon, 
+  Package
 } from 'lucide-react';
 import '../styles/skuchart.css';
 
@@ -144,8 +145,8 @@ export default function SKUChart() {
     <Paper p="md" shadow="sm">
       <Group position="apart" mb="md">
         <Group>
-          <ThemeIcon size="lg" radius="md" variant="light" color="blue">
-            <BarChart2 size={18} />
+          <ThemeIcon size="lg" radius="md" variant="light" color="black">
+            <Package size={20} />
           </ThemeIcon>
           <Title order={3}>SKU Analysis</Title>
         </Group>
@@ -154,84 +155,76 @@ export default function SKUChart() {
         </Tooltip>
       </Group>
 
-      <Group position="center" mb="md" spacing="xl">
-        {uniqueSkus.slice(0, 3).map((sku, index) => {
-          // Calculate additional statistics
-          const skuOrders = globalFiltered.filter(o => o.sku === sku);
-          const deliveredOrders = skuOrders.filter(o => o.status === 'Delivered').length;
-          const returnedOrders = skuOrders.filter(o => o.status === 'Return' || o.status === 'Returned').length;
-          const returnRate = skuOrders.length > 0 
-            ? ((returnedOrders / skuOrders.length) * 100).toFixed(1) 
-            : '0.0';
+     <Group position="center" mb="md" spacing="xl">
+  {filterSku !== 'All' ? (
+    // Si un SKU spécifique est sélectionné, afficher uniquement sa carte
+    uniqueSkus
+      .filter(sku => sku === filterSku)
+      .map((sku, index) => {
+        // Calculate additional statistics
+        const skuOrders = globalFiltered.filter(o => o.sku === sku);
+        const deliveredOrders = skuOrders.filter(o => o.status === 'Delivered').length;
+        const returnedOrders = skuOrders.filter(o => o.status === 'Return' || o.status === 'Returned').length;
+        const returnRate = skuOrders.length > 0 
+          ? ((returnedOrders / skuOrders.length) * 100).toFixed(1) 
+          : '0.0';
 
-          return (
-            <Card 
-              key={sku}
-              shadow="sm" 
-              p="md" 
-              radius="md" 
-              withBorder 
-              style={{ 
-                width: '350px', 
-                display: 'flex', 
-                flexDirection: 'column',
-                padding: '15px'
-              }}
-            >
-              <Group position="apart" mb="xs">
-                <Text size="sm" weight={600} color="dark">{sku}</Text>
-                <ThemeIcon 
-                  color={colorPalette[index % colorPalette.length].replace('#', '')} 
-                  variant="light" 
-                  radius="xl" 
-                  size="sm"
-                >
-                  <BoxIcon size={14} />
-                </ThemeIcon>
-              </Group>
-              
-              <Text 
-                size="xl" 
-                weight={700} 
-                mb="md"
-                color={colorPalette[index % colorPalette.length]}
-              >
-                {totalSkuOrders[sku]}
-              </Text>
-              
-              <Group position="apart" mb="xs">
-                <Text size="xs" color="dimmed">Delivered</Text>
-                <Badge color="green" size="sm">{deliveredOrders}</Badge>
-              </Group>
-              
-              <Group position="apart" mb="xs">
-                <Text size="xs" color="dimmed">Returns</Text>
-                <Badge color="red" size="sm">{returnedOrders}</Badge>
-              </Group>
-              
-              <Group position="apart" mb="xs">
-                <Text size="xs" color="dimmed">Peak Month</Text>
-                <Badge 
-                  color={colorPalette[index % colorPalette.length].replace('#', '')} 
-                  size="sm"
-                >
-                  {peakSkuMonth[sku].month}
-                </Badge>
-              </Group>
-              
-              <Group position="apart">
-                <Text size="xs" color="dimmed">Returns Rate</Text>
-                <Badge 
-                  color={returnRate > 10 ? "red" : "green"} 
-                  size="sm"
-                >
-                  {returnRate}% Returns
-                </Badge>
-              </Group>
-            </Card>
-          );
-        })}
-      </Group>
+        return (
+        <Card 
+  key={sku}
+  shadow="sm" 
+  p="sm" 
+  radius="md" 
+  withBorder 
+  style={{ 
+    width: '100%', 
+    maxWidth: '350px',
+    marginBottom: '10px'
+  }}
+>
+  {/* Header with SKU name and icon */}
+  <Group position="apart" mb={8}>
+    <Text size="sm" weight={700}>{sku}</Text>
+    <ThemeIcon 
+      color={colorPalette[index % colorPalette.length].replace('#', '')} 
+      variant="light" 
+      radius="xl" 
+      size="sm"
+    >
+      <BoxIcon size={14} />
+    </ThemeIcon>
+  </Group>
+  
+  {/* Total orders */}
+  <Text size="xl" weight={700} mb={12}>
+    {totalSkuOrders[sku]}
+  </Text>
+  
+  {/* Statistics row */}
+  <Group position="apart" spacing="xs" noWrap>
+    <Group spacing={4} noWrap>
+      <Text size="xs" color="dimmed">Delivered</Text>
+      <Badge color="green" size="sm">{deliveredOrders}</Badge>
+    </Group>
+    
+    <Group spacing={4} noWrap>
+      <Text size="xs" color="dimmed">Returns</Text>
+      <Badge color="red" size="sm">{returnedOrders}</Badge>
+    </Group>
+    
+    <Group spacing={4} noWrap>
+      <Text size="xs" color="dimmed">Peak</Text>
+      <Badge color="blue" size="sm">{peakSkuMonth[sku].month}</Badge>
+    </Group>
+  </Group>
+</Card>
+        );
+      })
+  ) : (
+    // Si aucun SKU spécifique n'est sélectionné, afficher un message ou rien
+    <Text color="dimmed">Select a specific SKU to see detailed information</Text>
+  )}
+</Group>
 
       <BarChart
         h={300}
@@ -266,6 +259,7 @@ export default function SKUChart() {
         }}
       />
 
+    {filterSku === 'All' && (
       <div className="sku-legend">
         {series.map(({ name, color }) => (
           <div key={name} className="legend-item">
@@ -274,6 +268,8 @@ export default function SKUChart() {
           </div>
         ))}
       </div>
+    )}
+   
     </Paper>
   );
 }

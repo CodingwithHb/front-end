@@ -20,7 +20,8 @@ import {
   LineChart as LineChartIcon, 
   Info, 
   UserCheck, 
-  UserX 
+  UserX, 
+  Users
 } from 'lucide-react';
 import '../styles/genderchart.css';
 
@@ -158,7 +159,7 @@ export function GenderChart() {
       <Group position="apart" mb="md">
         <Group>
           <ThemeIcon size="lg" radius="md" variant="light" color="blue">
-            <LineChartIcon size={18} />
+            <Users size={20} />
           </ThemeIcon>
           <Title order={3}>Gender Analysis</Title>
         </Group>

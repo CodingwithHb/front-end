@@ -87,4 +87,44 @@
   .filtrage-item select:focus {
     border-color: #888;
   }
-  
+ /* Custom modal styles */
+.custom-modal .mantine-Modal-modal {
+  max-width: 450px;
+  border-radius: 12px;
+  padding: 24px;
+  background-color: #fdfdfd;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.custom-modal .mantine-Modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.custom-modal .mantine-Accordion-item {
+  border: none;
+  background: #f9f9f9;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  box-shadow: 0 0 0 1px #eee;
+}
+
+.custom-modal .mantine-Accordion-control {
+  padding: 12px 16px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.custom-modal .mantine-Accordion-panel {
+  padding: 12px 16px 16px;
+}
+
+.custom-modal .mantine-Button-root {
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 6px;
+}
+ 

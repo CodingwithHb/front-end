@@ -65,24 +65,25 @@ function Header() {
         backgroundColor: theme.white,
         boxShadow: theme.shadows.xs,
         transition: 'transform 0.2s ease',
+        textAlign: 'center', // Center the text
+        maxWidth: 200, // Limit the card width
+        margin: '0 auto', // Center the card horizontally
         '&:hover': {
           transform: 'translateY(-5px)'
         }
       })}
     >
-      <Group>
+      <Group position="center" spacing="xs">
         <ThemeIcon variant="light" color={color} size="lg" radius="md">
           {icon}
         </ThemeIcon>
-        <div>
-          <Text size="xs" color="dimmed" transform="uppercase">
-            {title}
-          </Text>
-          <Text weight={700} size="xl">
-            {value.toLocaleString()}
-          </Text>
-        </div>
       </Group>
+      <Text size="xs" color="dimmed" transform="uppercase" mt="sm">
+        {title}
+      </Text>
+      <Text weight={700} size="lg" mt="xs">
+        {value.toLocaleString()}
+      </Text>
     </Paper>
   );
 
@@ -106,7 +107,7 @@ function Header() {
       </Group>
       
       {/* Statistics Cards */}
-      <Grid gutter="md" mb="md">
+      <Grid gutter="md" mb="md" >
         <Grid.Col span={4}>
           <StatisticCard 
             icon={<Package size={20} />}

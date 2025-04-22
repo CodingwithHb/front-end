@@ -105,7 +105,7 @@ const Import = ({ isOpen, onClose }) => {
     >
       {isLoading ? (
         <Center my="xl">
-          <Paper p="xl" radius="md" withBorder>
+          <Paper >
             <Group direction="column" align="center">
               <BeatLoader color="#4960aa" margin={10} size={24} />
               <Text color="dimmed" size="sm">Uploading file...</Text>

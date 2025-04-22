@@ -14,6 +14,7 @@ import {
   BarChart2, 
   MapPin, 
   Package, 
+  Truck, 
   Users 
 } from 'lucide-react';
 
@@ -62,43 +63,32 @@ function Dashboard() {
   return (
     <Container size="xl" px="md">
       <Header />
-
+   <br />
       {isDataLoaded ? (
         <Grid gutter="md">
           <Grid.Col span={6}>
-            <ChartCard 
-              title="Order Status Analysis" 
-              icon={<BarChart2 size={20} />}
-            >
+            
+            
               <Chart />
-            </ChartCard>
+          
           </Grid.Col>
 
           <Grid.Col span={6}>
-            <ChartCard 
-              title="Regional Order Distribution" 
-              icon={<MapPin size={20} />}
-            >
+
               <MapChart />
-            </ChartCard>
+         
           </Grid.Col>
 
           <Grid.Col span={6}>
-            <ChartCard 
-              title="SKU Performance" 
-              icon={<Package size={20} />}
-            >
+            
               <SKUChart />
-            </ChartCard>
+           
           </Grid.Col>
 
           <Grid.Col span={6}>
-            <ChartCard 
-              title="Gender Analysis" 
-              icon={<Users size={20} />}
-            >
+           
               <GenderChart />
-            </ChartCard>
+            
           </Grid.Col>
         </Grid>
       ) : (

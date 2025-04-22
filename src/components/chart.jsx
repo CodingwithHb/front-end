@@ -23,7 +23,8 @@ import {
   TrendingDown, 
   Calendar, 
   PackageCheck, 
-  PackageX 
+  PackageX, 
+  Truck
 } from 'lucide-react';
 import '../styles/chart.css';
 
@@ -157,10 +158,11 @@ export default function Chart() {
     <Paper p="md" shadow="sm">
       <Group position="apart" mb="md">
         <Group>
-          <ThemeIcon size="lg" radius="md" variant="light" color="blue">
-            <BarChart2 size={18} />
-          </ThemeIcon>
-          <Title order={3}>Order Status Analysis</Title>
+         
+          <ThemeIcon size="lg" radius="md" variant="light" color="green">
+            <Truck size={20} color='green' />
+          </ThemeIcon> 
+          <Title order={3} >Order Status Analysis</Title>
         </Group>
         <Tooltip label="Click bars for details">
           <ActionIcon><Info size={18} /></ActionIcon>

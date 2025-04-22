@@ -194,8 +194,8 @@ export default function MapChart() {
   return (
     <Paper p="md" shadow="sm">
       <Group position="apart" mb="md">
-        <ThemeIcon size="lg" radius="md" variant="light" color="blue">
-          <BarChart2 size={18} />
+        <ThemeIcon size="lg" radius="md" variant="light" color="red">
+          <MapPin size={20} />
         </ThemeIcon>
         <Title order={3}>Regional Orders</Title>
         <Tooltip label="Click pins for details"><ActionIcon><Info size={18}/></ActionIcon></Tooltip>

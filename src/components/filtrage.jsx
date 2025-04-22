@@ -49,6 +49,127 @@ const months = [
   { value: '11', label: 'Dec' },
 ];
 
+// Styles CSS personnalisés
+const customStyles = {
+  modal: {
+    maxWidth: 450,
+    boxShadow: '0 10px 35px rgba(0, 0, 0, 0.1)',
+    borderRadius: '8px'
+  },
+  header: {
+    padding: '20px 25px',
+    borderBottom: '1px solid #eaeaea',
+    backgroundColor: '#f8fafc',
+    borderTopLeftRadius: '8px',
+    borderTopRightRadius: '8px'
+  },
+  title: {
+    marginBottom: 0,
+    fontSize: '18px',
+    fontWeight: 600,
+    color: '#334155'
+  },
+  body: {
+    padding: '25px'
+  },
+  summaryBox: {
+    backgroundColor: '#f1f5f9',
+    borderRadius: '6px',
+    padding: '15px',
+    marginBottom: '20px'
+  },
+  summaryItem: {
+    marginBottom: '8px'
+  },
+  summaryLabel: {
+    color: '#64748b',
+    fontSize: '13px',
+    fontWeight: 500
+  },
+  summaryValue: {
+    color: '#334155',
+    fontSize: '14px',
+    fontWeight: 600
+  },
+  accordion: {
+    border: 'none',
+    marginBottom: '20px'
+  },
+  accordionItem: {
+    border: '1px solid #e2e8f0',
+    borderRadius: '6px',
+    overflow: 'hidden',
+    marginBottom: '12px'
+  },
+  accordionHeader: {
+    backgroundColor: '#f8fafc',
+    padding: '12px 16px'
+  },
+  accordionTitle: {
+    fontSize: '15px',
+    fontWeight: 600,
+    color: '#334155'
+  },
+  accordionPanel: {
+    padding: '16px',
+    backgroundColor: 'white'
+  },
+  label: {
+    fontSize: '13px',
+    fontWeight: 600,
+    color: '#475569',
+    marginBottom: '6px'
+  },
+  sublabel: {
+    fontSize: '12px',
+    color: '#64748b',
+    marginBottom: '4px'
+  },
+  select: {
+    border: '1px solid #e2e8f0',
+    borderRadius: '6px',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+    '&:focus, &:hover': {
+      borderColor: '#90cdf4',
+      boxShadow: '0 0 0 3px rgba(66, 153, 225, 0.1)'
+    }
+  },
+  footer: {
+    padding: '15px 25px',
+    borderTop: '1px solid #eaeaea',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    backgroundColor: '#f8fafc',
+    borderBottomLeftRadius: '8px',
+    borderBottomRightRadius: '8px'
+  },
+  cancelButton: {
+    backgroundColor: 'white',
+    border: '1px solid #e2e8f0',
+    color: '#475569',
+    fontWeight: 500,
+    marginRight: '10px',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    transition: 'background-color 0.2s',
+    '&:hover': {
+      backgroundColor: '#f1f5f9'
+    }
+  },
+  applyButton: {
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    fontWeight: 500,
+    padding: '8px 16px',
+    borderRadius: '6px',
+    border: 'none',
+    transition: 'background-color 0.2s',
+    '&:hover': {
+      backgroundColor: '#2563eb'
+    }
+  }
+};
+
 export default function Filtrage() {
   const dispatch = useDispatch();
   const [opened, setOpened] = useState(false);
@@ -128,13 +249,20 @@ export default function Filtrage() {
   // Styles "compacts" pour Mantine Select
   const selectStyles = {
     input: {
-      height: 28,
-      fontSize: 12,
+      height: 36,
+      fontSize: 14,
       minHeight: 'auto',
+      border: '1px solid #e2e8f0',
+      borderRadius: '6px',
+      transition: 'border-color 0.2s, box-shadow 0.2s',
+      '&:focus': {
+        borderColor: '#90cdf4',
+        boxShadow: '0 0 0 3px rgba(66, 153, 225, 0.1)'
+      }
     },
     rightSection: {
       pointerEvents: 'none',
-      width: 20,
+      width: 30,
     },
   };
 
@@ -165,28 +293,28 @@ export default function Filtrage() {
     <>
       <Group position="center" spacing="xs">
         <Tooltip label="Filter Orders">
-        <Button
-        onClick={() => setOpened(true)}
-        leftIcon={<IconFilter  />}
-        variant="light"
-        color="blue"
-        size="sm"
-      >
-        <Group spacing="xs">
-          <Text style={{fontWeight:"bold"}}>Filters</Text>
-          <IconFilter size={16} />
-        </Group>
-        {getActiveFiltersCount() > 0 && (
-          <Badge
+          <Button
+            onClick={() => setOpened(true)}
+            leftIcon={<IconFilter />}
+            variant="light"
             color="blue"
-            variant="filled"
-            size="xs"
-            sx={{ marginLeft: 5 }}
+            size="sm"
           >
-            {getActiveFiltersCount()}
-          </Badge>
-        )}
-      </Button>
+            <Group spacing="xs">
+              <Text style={{fontWeight:"bold"}}>Filters</Text>
+              <IconFilter size={16} />
+            </Group>
+            {getActiveFiltersCount() > 0 && (
+              <Badge
+                color="blue"
+                variant="filled"
+                size="xs"
+                sx={{ marginLeft: 5 }}
+              >
+                {getActiveFiltersCount()}
+              </Badge>
+            )}
+          </Button>
         </Tooltip>
       </Group>
 
@@ -200,246 +328,223 @@ export default function Filtrage() {
           </Group>
         }
         styles={{
-          title: { marginBottom: 0 },
-          modal: { maxWidth: 400 }
+          modal: { ...customStyles.modal },
+          header: { ...customStyles.header },
+          title: { ...customStyles.title },
+          body: { ...customStyles.body },
+          close: { 
+            color: '#64748b',
+            '&:hover': { 
+              backgroundColor: '#f1f5f9',
+              color: '#334155'
+            }
+          }
         }}
+        padding={0}
       >
-        <Box mb="md">
-          <Group position="apart">
-            <Text size="sm" color="dimmed">Active Filters</Text>
-            <Text size="sm" weight={500}>{getFilterSummary()}</Text>
-          </Group>
-          <Group position="apart" mt={5}>
-            <Text size="sm" color="dimmed">Date Range</Text>
-            <Text size="sm" weight={500}>{getDateRangeSummary()}</Text>
-          </Group>
-        </Box>
+        <div style={customStyles.body}>
+          <Box style={customStyles.summaryBox}>
+            <div style={customStyles.summaryItem}>
+              <Group position="apart">
+                <Text style={customStyles.summaryLabel}>Active Filters</Text>
+                <Text style={customStyles.summaryValue}>{getFilterSummary()}</Text>
+              </Group>
+            </div>
+            <div style={customStyles.summaryItem}>
+              <Group position="apart">
+                <Text style={customStyles.summaryLabel}>Date Range</Text>
+                <Text style={customStyles.summaryValue}>{getDateRangeSummary()}</Text>
+              </Group>
+            </div>
+          </Box>
 
-        <Divider mb="md" />
+          {/* Accordion for collapsible sections */}
+          <Accordion 
+            variant="separated" 
+            defaultValue={["products", "dates"]} 
+            multiple
+            styles={{
+              root: { ...customStyles.accordion },
+              item: { ...customStyles.accordionItem },
+              control: { ...customStyles.accordionHeader },
+              label: { ...customStyles.accordionTitle },
+              panel: { ...customStyles.accordionPanel }
+            }}
+          >
+            {/* Product Filters */}
+            <Accordion.Item value="products">
+              <Accordion.Control icon={<IconPackage size={16} style={{ color: '#3b82f6' }} />}>
+                Product Filters
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Box mb="md">
+                  <Text style={customStyles.label}>
+                    SKU
+                  </Text>
+                  <Select
+                    data={skuData}
+                    value={filterSku}
+                    onChange={handleSkuChange}
+                    placeholder="Select SKU"
+                    size="sm"
+                    styles={selectStyles}
+                    sx={{ width: '100%' }}
+                  />
+                </Box>
 
-        {/* Accordion for collapsible sections */}
-        <Accordion variant="separated" defaultValue={["products", "dates"]} multiple>
-          {/* Product Filters */}
-          <Accordion.Item value="products">
-            <Accordion.Control icon={<IconPackage size={14} />}>
-              Product Filters
-            </Accordion.Control>
-            <Accordion.Panel>
-              <Box mb="md">
-                <Text size="xs" weight={600} mb={4}>
-                  SKU
-                </Text>
-                <Select
-                  data={skuData}
-                  value={filterSku}
-                  onChange={handleSkuChange}
-                  placeholder="Select SKU"
-                  size="xs"
-                  styles={selectStyles}
-                  sx={{ width: '100%' }}
-                />
-              </Box>
+                <Box mb="md">
+                  <Text style={customStyles.label}>
+                    Status
+                  </Text>
+                  <Select
+                    data={statusData}
+                    value={filterStatus}
+                    onChange={handleStatusChange}
+                    placeholder="Select Status"
+                    size="sm"
+                    styles={selectStyles}
+                    sx={{ width: '100%' }}
+                  />
+                </Box>
 
-              <Box mb="md">
-                <Text size="xs" weight={600} mb={4}>
-                  Status
-                </Text>
-                <Select
-                  data={statusData}
-                  value={filterStatus}
-                  onChange={handleStatusChange}
-                  placeholder="Select Status"
-                  size="xs"
-                  styles={selectStyles}
-                  sx={{ width: '100%' }}
-                />
-              </Box>
+                <Box>
+                  <Text style={customStyles.label}>
+                    Gender
+                  </Text>
+                  <Select
+                    data={genderData}
+                    value={filterGender}
+                    onChange={handleGenderChange}
+                    placeholder="Select Gender"
+                    size="sm"
+                    styles={selectStyles}
+                    sx={{ width: '100%' }}
+                  />
+                </Box>
+              </Accordion.Panel>
+            </Accordion.Item>
 
-              <Box>
-                <Text size="xs" weight={600} mb={4}>
-                  Gender
-                </Text>
-                <Select
-                  data={genderData}
-                  value={filterGender}
-                  onChange={handleGenderChange}
-                  placeholder="Select Gender"
-                  size="xs"
-                  styles={selectStyles}
-                  sx={{ width: '100%' }}
-                />
-              </Box>
-            </Accordion.Panel>
-          </Accordion.Item>
+            {/* Date Filters */}
+            <Accordion.Item value="dates">
+              <Accordion.Control icon={<IconCalendar size={16} style={{ color: '#3b82f6' }} />}>
+                Date Range
+              </Accordion.Control>
+              <Accordion.Panel>
+                {/* FROM */}
+                <Box mb="lg">
+                  <Text style={customStyles.label}>
+                    From
+                  </Text>
+                  <Group spacing={8} grow>
+                    {/* FROM: Day */}
+                    <Box>
+                      <Text style={customStyles.sublabel}>Day</Text>
+                      <Select
+                        data={dayOptions}
+                        value={String(startDay)}
+                        onChange={(val) => handleDateChange('start', 'date', val)}
+                        placeholder="D"
+                        size="sm"
+                        styles={selectStyles}
+                      />
+                    </Box>
+                    {/* FROM: Month */}
+                    <Box>
+                      <Text style={customStyles.sublabel}>Month</Text>
+                      <Select
+                        data={months}
+                        value={String(startMonth)}
+                        onChange={(val) => handleDateChange('start', 'month', val)}
+                        placeholder="M"
+                        size="sm"
+                        styles={selectStyles}
+                      />
+                    </Box>
+                    {/* FROM: Year */}
+                    <Box>
+                      <Text style={customStyles.sublabel}>Year</Text>
+                      <Select
+                        data={yearOptions}
+                        value={String(startYear)}
+                        onChange={(val) => handleDateChange('start', 'year', val)}
+                        placeholder="Y"
+                        size="sm"
+                        styles={selectStyles}
+                      />
+                    </Box>
+                  </Group>
+                </Box>
 
-          {/* Date Filters */}
-          <Accordion.Item value="dates">
-            <Accordion.Control icon={<IconCalendar size={14} />}>
-              Date Range
-            </Accordion.Control>
-            <Accordion.Panel>
-              {/* FROM */}
-              <Box mb="md">
-                <Text size="xs" weight={600} mb={4}>
-                  From
-                </Text>
-                <Group spacing={8} grow>
-                  {/* FROM: Day */}
-                  <Box>
-                    <Text size="xs" color="dimmed" mb={2}>Day</Text>
-                    <Select
-                      data={dayOptions}
-                      value={String(startDay)}
-                      onChange={(val) => handleDateChange('start', 'date', val)}
-                      placeholder="D"
-                      size="xs"
-                      styles={{
-                        input: {
-                          height: 28,
-                          fontSize: 12
-                        },
-                        rightSection: {
-                          width: 20,
-                          pointerEvents: 'none'
-                        }
-                      }}
-                    />
-                  </Box>
-                  {/* FROM: Month */}
-                  <Box>
-                    <Text size="xs" color="dimmed" mb={2}>Month</Text>
-                    <Select
-                      data={months}
-                      value={String(startMonth)}
-                      onChange={(val) => handleDateChange('start', 'month', val)}
-                      placeholder="M"
-                      size="xs"
-                      styles={{
-                        input: {
-                          height: 28,
-                          fontSize: 12
-                        },
-                        rightSection: {
-                          width: 20,
-                          pointerEvents: 'none'
-                        }
-                      }}
-                    />
-                  </Box>
-                  {/* FROM: Year */}
-                  <Box>
-                    <Text size="xs" color="dimmed" mb={2}>Year</Text>
-                    <Select
-                      data={yearOptions}
-                      value={String(startYear)}
-                      onChange={(val) => handleDateChange('start', 'year', val)}
-                      placeholder="Y"
-                      size="xs"
-                      styles={{
-                        input: {
-                          height: 28,
-                          fontSize: 12
-                        },
-                        rightSection: {
-                          width: 20,
-                          pointerEvents: 'none'
-                        }
-                      }}
-                    />
-                  </Box>
-                </Group>
-              </Box>
+                {/* TO */}
+                <Box>
+                  <Text style={customStyles.label}>
+                    To
+                  </Text>
+                  <Group spacing={8} grow>
+                    {/* TO: Day */}
+                    <Box>
+                      <Text style={customStyles.sublabel}>Day</Text>
+                      <Select
+                        data={dayOptions}
+                        value={String(endDay)}
+                        onChange={(val) => handleDateChange('end', 'date', val)}
+                        placeholder="D"
+                        size="sm"
+                        styles={selectStyles}
+                      />
+                    </Box>
+                    {/* TO: Month */}
+                    <Box>
+                      <Text style={customStyles.sublabel}>Month</Text>
+                      <Select
+                        data={months}
+                        value={String(endMonth)}
+                        onChange={(val) => handleDateChange('end', 'month', val)}
+                        placeholder="M"
+                        size="sm"
+                        styles={selectStyles}
+                      />
+                    </Box>
+                    {/* TO: Year */}
+                    <Box>
+                      <Text style={customStyles.sublabel}>Year</Text>
+                      <Select
+                        data={yearOptions}
+                        value={String(endYear)}
+                        onChange={(val) => handleDateChange('end', 'year', val)}
+                        placeholder="Y"
+                        size="sm"
+                        styles={selectStyles}
+                      />
+                    </Box>
+                  </Group>
+                </Box>
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
+        </div>
 
-              {/* TO */}
-              <Box>
-                <Text size="xs" weight={600} mb={4}>
-                  To
-                </Text>
-                <Group spacing={8} grow>
-                  {/* TO: Day */}
-                  <Box>
-                    <Text size="xs" color="dimmed" mb={2}>Day</Text>
-                    <Select
-                      data={dayOptions}
-                      value={String(endDay)}
-                      onChange={(val) => handleDateChange('end', 'date', val)}
-                      placeholder="D"
-                      size="xs"
-                      styles={{
-                        input: {
-                          height: 28,
-                          fontSize: 12
-                        },
-                        rightSection: {
-                          width: 20,
-                          pointerEvents: 'none'
-                        }
-                      }}
-                    />
-                  </Box>
-                  {/* TO: Month */}
-                  <Box>
-                    <Text size="xs" color="dimmed" mb={2}>Month</Text>
-                    <Select
-                      data={months}
-                      value={String(endMonth)}
-                      onChange={(val) => handleDateChange('end', 'month', val)}
-                      placeholder="M"
-                      size="xs"
-                      styles={{
-                        input: {
-                          height: 28,
-                          fontSize: 12
-                        },
-                        rightSection: {
-                          width: 20,
-                          pointerEvents: 'none'
-                        }
-                      }}
-                    />
-                  </Box>
-                  {/* TO: Year */}
-                  <Box>
-                    <Text size="xs" color="dimmed" mb={2}>Year</Text>
-                    <Select
-                      data={yearOptions}
-                      value={String(endYear)}
-                      onChange={(val) => handleDateChange('end', 'year', val)}
-                      placeholder="Y"
-                      size="xs"
-                      styles={{
-                        input: {
-                          height: 28,
-                          fontSize: 12
-                        },
-                        rightSection: {
-                          width: 20,
-                          pointerEvents: 'none'
-                        }
-                      }}
-                    />
-                  </Box>
-                </Group>
-              </Box>
-            </Accordion.Panel>
-          </Accordion.Item>
-        </Accordion>
-
-        <Group position="right" mt="xl">
+        <div style={customStyles.footer}>
           <Button 
-            variant="default" 
+            variant="subtle" 
             onClick={() => setOpened(false)}
             size="sm"
+            styles={{ 
+              root: customStyles.cancelButton
+            }}
           >
             Cancel
           </Button>
           <Button 
             onClick={() => setOpened(false)}
             size="sm"
+            styles={{
+              root: customStyles.applyButton
+            }}
           >
             Apply Filters
           </Button>
-        </Group>
+        </div>
       </Modal>
     </>
   );
