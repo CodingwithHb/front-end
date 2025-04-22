@@ -1,149 +1,147 @@
-import React from 'react';
+
+import React, { useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { LineChart } from '@mantine/charts';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { 
-  Paper, 
-  Group, 
-  Text, 
-  Badge, 
-  Title, 
-  Tooltip, 
-  ActionIcon, 
+import {
+  Paper,
+  Group,
+  Text,
+  Badge,
+  Title,
   ThemeIcon,
   Grid,
-  Card
+  Card,
+  SegmentedControl,
 } from '@mantine/core';
-import { 
-  LineChart as LineChartIcon, 
-  Info, 
-  UserCheck, 
-  UserX, 
-  Users
-} from 'lucide-react';
+import { Users, UserCheck, UserX } from 'lucide-react';
 import '../styles/genderchart.css';
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-export function GenderChart() {
-  // Data and filter retrieval
-  const orders = useSelector((state) => state.orders);
-  const filterSku = useSelector((state) => state.filterSku);
-  const filterStatus = useSelector((state) => state.filterStatus);
-  const filterGender = useSelector((state) => state.filterGender);
-  const filterStartDate = useSelector((state) => state.filterStartDate);
-  const filterEndDate = useSelector((state) => state.filterEndDate);
+// ───────────────────────────────────────── labels
+const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const monthLabels   = Array.from({ length: 12 }, (_, i) => dayjs().month(i).format('MMM'));
+
+function GenderChart() {
+  // ♦ redux filters
+  const orders          = useSelector((s) => s.orders);
+  const filterSku       = useSelector((s) => s.filterSku);
+  const filterStatus    = useSelector((s) => s.filterStatus);
+  const filterGender    = useSelector((s) => s.filterGender);
+  const filterStartDate = useSelector((s) => s.filterStartDate);
+  const filterEndDate   = useSelector((s) => s.filterEndDate);
+
+  // ♦ local state
+  const [viewMode, setViewMode] = useState('month'); // 'month' | 'weekday'
 
   const startDate = dayjs(filterStartDate);
-  const endDate = dayjs(filterEndDate);
+  const endDate   = dayjs(filterEndDate);
 
-  // Filter by date
-  const filteredByDate = orders.filter(o => {
-    const raw = o.delivered_date || o.return_date || o.shipped_at;
-    return raw && dayjs(raw).isSameOrAfter(startDate) && dayjs(raw).isSameOrBefore(endDate);
-  });
+  // ───────────────────────────────────────── filter orders
+  const filtered = useMemo(() => {
+    const byDate = orders.filter((o) => {
+      const raw = o.delivered_date || o.return_date || o.shipped_at;
+      return raw && dayjs(raw).isSameOrAfter(startDate) && dayjs(raw).isSameOrBefore(endDate);
+    });
 
-  // Filter by SKU, status, and gender
-  const data = filteredByDate.filter(o => {
-    if (filterSku !== 'All' && o.sku !== filterSku) return false;
-    if (filterStatus !== 'All' && o.status !== filterStatus) return false;
-    if (filterGender !== 'All' && o.gender?.toLowerCase() !== filterGender.toLowerCase()) return false;
-    return true;
-  });
+    return byDate.filter((o) => {
+      if (filterSku !== 'All' && o.sku !== filterSku) return false;
+      if (filterStatus !== 'All' && o.status !== filterStatus) return false;
+      if (filterGender !== 'All' && (o.gender || '').toLowerCase() !== filterGender.toLowerCase()) return false;
+      return true;
+    });
+  }, [orders, filterSku, filterStatus, filterGender, startDate, endDate]);
 
-  // X-axis: months
-  const months = Array.from({ length: 12 }, (_, i) => dayjs().month(i).format('MMM'));
+  // distinct years
+  const years = useMemo(() => Array.from(
+    new Set(filtered.map(o => dayjs(o.delivered_date || o.return_date || o.shipped_at).year()))
+  ).sort(), [filtered]);
 
-  // Initialize totals
-  const monthly = months.reduce((acc, m) => ({
-    ...acc,
-    [m]: { Male: 0, Female: 0 }
-  }), {});
+  // ───────────────────────────────────────── aggregation
+  const {
+    chartData,
+    series,
+    totalMale,
+    totalFemale,
+    malePeakLabel,
+    femalePeakLabel,
+    labelKey,
+    peakLabelText,
+  } = useMemo(() => {
+    const labels   = viewMode === 'month' ? monthLabels : weekdayLabels;
+    const lk       = viewMode === 'month' ? 'month' : 'day';
+    const peakText = viewMode === 'month' ? 'Peak Month' : 'Peak Day';
 
-  // Fill data
-  data.forEach(o => {
-    const d = dayjs(o.delivered_date || o.return_date || o.shipped_at);
-    const m = d.format('MMM');
-    const g = o.gender?.toLowerCase();
-    if (monthly[m]) {
-      if (g === 'male') monthly[m].Male++;
-      else if (g === 'female') monthly[m].Female++;
-    }
-  });
+    const counters = labels.reduce((acc, l) => ({ ...acc, [l]: { male: 0, female: 0 } }), {});
 
-  // Prepare chart data
-  const chartData = months.map(m => ({
-    month: m,
-    ...monthly[m]
-  }));
+    filtered.forEach((o) => {
+      const d   = dayjs(o.delivered_date || o.return_date || o.shipped_at);
+      const lbl = viewMode === 'month' ? d.format('MMM') : d.format('ddd');
+      const g   = (o.gender || '').toLowerCase();
+      if (!counters[lbl]) return;
+      if (g === 'male')   counters[lbl].male   += 1;
+      if (g === 'female') counters[lbl].female += 1;
+    });
 
-  // Identify present years
-  const years = Array.from(
-    new Set(
-      data.map(o => dayjs(o.delivered_date || o.return_date || o.shipped_at).year())
-    )
-  ).sort();
+    const dataArr = labels.map((l) => ({
+      [lk]: l,
+      Male  : counters[l].male,
+      Female: counters[l].female,
+    }));
 
-  // Series based on gender filter
-  const series = [];
-  if (filterGender === 'All' || filterGender.toLowerCase() === 'male') 
-    series.push({ name: 'Male', color: '#2D9CDB' });
-  if (filterGender === 'All' || filterGender.toLowerCase() === 'female') 
-    series.push({ name: 'Female', color: '#EB5757' });
+    const tMale   = filtered.filter(o => (o.gender || '').toLowerCase() === 'male').length;
+    const tFemale = filtered.filter(o => (o.gender || '').toLowerCase() === 'female').length;
 
-  // Calculate total orders by gender
-  const totalMale = data.filter(o => o.gender?.toLowerCase() === 'male').length;
-  const totalFemale = data.filter(o => o.gender?.toLowerCase() === 'female').length;
+    const maxMale = Math.max(...labels.map(l => counters[l].male));
+    const maxFem  = Math.max(...labels.map(l => counters[l].female));
+    const peakMaleLabel = maxMale ? labels.find(l => counters[l].male === maxMale) : 'N/A';
+    const peakFemLabel  = maxFem  ? labels.find(l => counters[l].female === maxFem) : 'N/A';
 
-  // Find peak months for each gender
-  const malePeakMonth = months.reduce((peak, m) => 
-    monthly[m].Male > monthly[peak].Male ? m : peak, 
-    months[0]
-  );
-  const femalePeakMonth = months.reduce((peak, m) => 
-    monthly[m].Female > monthly[peak].Female ? m : peak, 
-    months[0]
-  );
+    const ser = [];
+    if (filterGender === 'All' || filterGender.toLowerCase() === 'male')   ser.push({ name: 'Male',   color: '#2D9CDB' });
+    if (filterGender === 'All' || filterGender.toLowerCase() === 'female') ser.push({ name: 'Female', color: '#EB5757' });
 
-  // Custom tooltip with year details
+    return {
+      chartData      : dataArr,
+      series         : ser,
+      totalMale      : tMale,
+      totalFemale    : tFemale,
+      malePeakLabel  : peakMaleLabel,
+      femalePeakLabel: peakFemLabel,
+      labelKey       : lk,
+      peakLabelText  : peakText,
+    };
+  }, [filtered, viewMode, filterGender]);
+
+  // ───────────────────────────────────────── tooltip
   const CustomTooltip = ({ label, payload }) => {
-    if (!payload || payload.length === 0) return null;
+    if (!payload?.length) return null;
+    const matchLabel = (d) => viewMode === 'month' ? d.format('MMM') === label : d.format('ddd') === label;
+
     return (
-      <Paper p="md" withBorder shadow="sm">
-        <Text weight={500} mb="xs">{label}</Text>
-        {payload.map((entry, idx) => {
-          const genderKey = entry.name;
+      <Paper p="sm" withBorder shadow="sm">
+        <Text fw={500} mb="xs">{label}</Text>
+        {payload.map(entry => {
+          const gKey = entry.name; // Male / Female
           return (
-            <React.Fragment key={idx}>
+            <React.Fragment key={gKey}>
               <Group position="apart" mb="xs">
-                <Group>
-                  <Badge 
-                    color={genderKey === 'Male' ? 'blue' : 'red'}
-                    variant="light"
-                  >
-                    {genderKey}
-                  </Badge>
-                  <Text>{entry.value} commandes</Text>
-                </Group>
+                <Badge color={gKey === 'Male' ? 'blue' : 'red'} variant="light">{gKey}</Badge>
+                <Text>{entry.value} orders</Text>
               </Group>
-              {years.map((y) => {
-                const count = data.filter(o => {
+              {years.map(y => {
+                const count = filtered.filter(o => {
                   const d = dayjs(o.delivered_date || o.return_date || o.shipped_at);
-                  return (
-                    o.gender?.toLowerCase() === genderKey.toLowerCase() &&
-                    d.format('MMM') === label &&
-                    d.year() === y
-                  );
+                  return (o.gender || '').toLowerCase() === gKey.toLowerCase() && matchLabel(d) && d.year() === y;
                 }).length;
-                return count > 0 ? (
+                return count ? (
                   <Group key={y} position="apart" ml="lg" mb="xs">
-                    <Text size="xs" color="dimmed">{y}</Text>
-                    <Badge size="xs" color={genderKey === 'Male' ? 'blue' : 'red'}>
-                      {count} commandes
-                    </Badge>
+                    <Text size="xs" c="dimmed">{y}</Text>
+                    <Badge size="xs" color={gKey === 'Male' ? 'blue' : 'red'}>{count}</Badge>
                   </Group>
                 ) : null;
               })}
@@ -154,87 +152,52 @@ export function GenderChart() {
     );
   };
 
+  // ───────────────────────────────────────── render
   return (
-    <Paper p="md" shadow="sm" >
-      <Group position="apart" mb="md">
+    <Paper p="md" shadow="sm">
+      <Group justify="space-between" mb="md">
         <Group>
           <ThemeIcon size="lg" radius="md" variant="light" color="blue">
             <Users size={20} />
           </ThemeIcon>
           <Title order={3}>Gender Analysis</Title>
         </Group>
-        <Tooltip label="Click lines for details">
-          <ActionIcon><Info size={18} /></ActionIcon>
-        </Tooltip>
+        <SegmentedControl
+          size="xs"
+          value={viewMode}
+          onChange={setViewMode}
+          data={[
+            { label: 'Monthly', value: 'month' },
+            { label: 'Weekday', value: 'weekday' },
+          ]}
+        />
       </Group>
 
-      <Grid gutter="md" mb="md" columns={2} align="stretch">
+      <Grid gutter="md" mb="md" columns={2}>
         <Grid.Col span={1}>
-          <Card 
-            shadow="sm" 
-            p="md" 
-            radius="md" 
-            withBorder 
-            style={{ 
-              height: '100%', 
-              display: 'flex', 
-              flexDirection: 'column',
-              justifyContent: 'space-between'
-            }}
-          >
+          <Card p="md" radius="md" withBorder shadow="sm" style={{ flex: 1 }}>
             <Group position="apart">
-              <Text size="sm" weight={500} color="dimmed">Male Orders</Text>
-              <ThemeIcon color="blue" variant="light" radius="xl" size="sm">
-                <UserCheck size={14} />
-              </ThemeIcon>
+              <Text size="sm" fw={500} c="dimmed">Male Orders</Text>
+              <ThemeIcon color="blue" variant="light" radius="xl" size="sm"><UserCheck size={14} /></ThemeIcon>
             </Group>
-            
-            <Text 
-              size="xl" 
-              weight={700}
-              color="blue"
-            >
-              {totalMale}
-            </Text>
-            
+            <Text size="xl" fw={700} c="blue">{totalMale}</Text>
             <Group position="apart">
-              <Text size="xs" color="dimmed">Peak Month</Text>
-              <Badge color="blue" size="xs">{malePeakMonth}</Badge>
+              <Text size="xs" c="dimmed">{peakLabelText}</Text>
+              <Badge color="blue" size="xs">{malePeakLabel}</Badge>
             </Group>
           </Card>
         </Grid.Col>
-        
+
         <Grid.Col span={1}>
-          <Card 
-            shadow="sm" 
-            p="md" 
-            radius="md" 
-            withBorder 
-            style={{ 
-              height: '100%', 
-              display: 'flex', 
-              flexDirection: 'column',
-              justifyContent: 'space-between'
-            }}
-          >
+          <Card p="md" radius="md" withBorder shadow="sm" style={{ flex: 1 }}>
             <Group position="apart">
-              <Text size="sm" weight={500} color="dimmed">Female Orders</Text>
-              <ThemeIcon color="red" variant="light" radius="xl" size="sm">
-                <UserX size={14} />
-              </ThemeIcon>
+              <Text size="sm" fw={500} c="dimmed">Female Orders</Text>
+              <ThemeIcon color="red" variant="light" radius="xl" size="sm"><UserX size={14} /></ThemeIcon>
             </Group>
-            
-            <Text 
-              size="xl" 
-              weight={700}
-              color="red"
-            >
-              {totalFemale}
-            </Text>
-            
+            <Text size="xl" fw={700} c="red">{totalFemale}</Text>
             <Group position="apart">
-              <Text size="xs" color="dimmed">Peak Month</Text>
-              <Badge color="red" size="xs">{femalePeakMonth}</Badge>
+              <Text size="xs" c="dimmed">{peakLabelText}</Text>
+              <Badge color="red" size="xs">{femalePeakLabel}</Badge>
             </Group>
           </Card>
         </Grid.Col>
@@ -243,44 +206,18 @@ export function GenderChart() {
       <LineChart
         h={300}
         data={chartData}
-        dataKey="month"
+        dataKey={labelKey}
         series={series}
         tooltipProps={{ shared: true, content: CustomTooltip }}
-        yAxisProps={{ 
-          domain: [0, 'dataMax'], 
-          tickLine: true,
-          axisLine: true,
-          stroke: '#E5E7EB',
-          tickFormatter: (value) => value.toFixed(0)
-        }}
-        xAxisProps={{
-          stroke: '#E5E7EB',
-        }}
-        gridProps={{
-          vertical: false,
-          horizontal: true,
-          stroke: '#E5E7EB',
-          opacity: 0.5
-        }}
+        yAxisProps={{ domain: [0, 'dataMax'], tickLine: true, axisLine: true, stroke: '#E5E7EB', tickFormatter: v => v.toFixed(0) }}
+        xAxisProps={{ stroke: '#E5E7EB' }}
+        gridProps={{ vertical: false, horizontal: true, stroke: '#E5E7EB', opacity: 0.5 }}
         curveType="linear"
-        style={{
-          overflow: 'visible',
-          '--chart-cursor-fill': '#f1f5f9',
-          '--chart-grid-color': '#e2e8f0',
-          '--chart-text-color': '#64748b',
-        }}
+        style={{ overflow: 'visible', '--chart-cursor-fill': '#f1f5f9', '--chart-grid-color': '#e2e8f0', '--chart-text-color': '#64748b' }}
       />
-
-      <div className="manual-legend">
-        {series.map(s => (
-          <div className="legend-item" key={s.name}>
-            <div className="legend-dot" style={{ backgroundColor: s.color }} />
-            <span className="legend-label">{s.name}</span>
-          </div>
-        ))}
-      </div>
     </Paper>
   );
 }
 
-export default GenderChart;
+// export both ways so you can `import GenderChart` or `import { GenderChart }`
+export { GenderChart };
