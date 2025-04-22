@@ -4,13 +4,34 @@ import { BarChart } from '@mantine/charts';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import { 
+  Paper, 
+  Group, 
+  Text, 
+  Badge, 
+  Title, 
+  Tooltip, 
+  ActionIcon, 
+  ThemeIcon,
+  Grid,
+  Card
+} from '@mantine/core';
+import { 
+  BarChart2, 
+  Info, 
+  TrendingUp, 
+  TrendingDown, 
+  Calendar, 
+  PackageCheck, 
+  PackageX 
+} from 'lucide-react';
 import '../styles/chart.css';
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
 export default function Chart() {
-  // Données et filtres
+  // Existing data filtering logic remains the same as in the previous implementation
   const orders = useSelector((state) => state.orders);
   const filterSku = useSelector((state) => state.filterSku);
   const filterGender = useSelector((state) => state.filterGender);
@@ -21,13 +42,12 @@ export default function Chart() {
   const startDate = dayjs(filterStartDate);
   const endDate = dayjs(filterEndDate);
 
-  // Filtrer par date
+  // Filtering logic remains the same
   const filteredByDate = orders.filter((o) => {
     const date = o.delivered_date || o.return_date || o.shipped_at;
     return date && dayjs(date).isSameOrAfter(startDate) && dayjs(date).isSameOrBefore(endDate);
   });
 
-  // Filtrer selon SKU, genre et statut
   const data = filteredByDate.filter((o) => {
     if (filterSku !== 'All' && o.sku !== filterSku) return false;
     if (filterGender !== 'All' && o.gender?.toLowerCase() !== filterGender.toLowerCase()) return false;
@@ -35,16 +55,14 @@ export default function Chart() {
     return true;
   });
 
-  // Axe X : mois simples
+  // Months and chart data preparation
   const months = Array.from({ length: 12 }, (_, i) => dayjs().month(i).format('MMM'));
 
-  // Initialiser les totaux mensuels
   const monthlyTotals = months.reduce((acc, m) => ({
     ...acc,
     [m]: { Delivered: 0, Returned: 0 }
   }), {});
 
-  // Compter les commandes
   data.forEach((o) => {
     const status = o.status;
     const d = dayjs(o.delivered_date || o.return_date || o.shipped_at);
@@ -60,80 +78,219 @@ export default function Chart() {
     Returned: monthlyTotals[m].Returned,
   }));
 
-  // Années présentes
-  const years = Array.from(new Set(data.map((o) => dayjs(o.delivered_date || o.return_date || o.shipped_at).year()))).sort();
+  // Statistics calculations
+  const totalDelivered = data.filter(o => o.status === 'Delivered').length;
+  const totalReturned = data.filter(o => o.status === 'Return' || o.status === 'Returned').length;
+  const returnRate = totalDelivered > 0 ? (totalReturned / (totalDelivered + totalReturned) * 100).toFixed(1) : 0;
+  
+  // Peak month finding logic
+  const findPeakMonth = (status) => {
+    const statusData = {};
+    months.forEach(m => {
+      statusData[m] = monthlyTotals[m][status];
+    });
+    
+    const maxCount = Math.max(...Object.values(statusData));
+    if (maxCount === 0) return { month: 'N/A', count: 0 };
+    
+    const peakMonth = Object.keys(statusData).find(m => statusData[m] === maxCount);
+    return { month: peakMonth, count: maxCount };
+  };
+  
+  const deliveredPeak = findPeakMonth('Delivered');
+  const returnedPeak = findPeakMonth('Returned');
 
-  // Tooltip customisé
+  // Years present in the filtered data
+  const years = Array.from(new Set(data.map((o) => 
+    dayjs(o.delivered_date || o.return_date || o.shipped_at).year()))).sort();
+
+  // Custom tooltip for the chart
   const CustomTooltip = ({ label, payload }) => {
     if (!payload || payload.length === 0) return null;
     return (
-      <div className="chartTooltip">
-        <strong>{label}</strong>
+      <Paper p="md" withBorder shadow="sm">
+        <Text weight={500} mb="xs">{label}</Text>
         {payload.map((entry, idx) => {
-          // Mapping entry.name à valeur de status
+          // Mapping entry.name to correct status
           const statusKey = entry.name === 'Returned' ? 'Return' : entry.name;
           return (
             <React.Fragment key={idx}>
-              <div style={{ color: entry.color, marginTop: 5 }}>
-                {entry.name}: <strong>{entry.value} commandes</strong>
-              </div>
+              <Group position="apart" mb="xs">
+                <Group>
+                  <Badge 
+                    color={entry.name === 'Delivered' ? 'green' : 'red'}
+                    variant="light"
+                  >
+                    {entry.name}
+                  </Badge>
+                  <Text>{entry.value} commandes</Text>
+                </Group>
+              </Group>
               {years.map((y) => {
                 const count = data.filter((o) => {
                   const d = dayjs(o.delivered_date || o.return_date || o.shipped_at);
                   return (
-                    // comparer avec statusKey
                     o.status === statusKey &&
                     d.format('MMM') === label &&
                     d.year() === y
                   );
                 }).length;
-                // N'afficher que si count > 0
+                // Only display if count > 0
                 if (count === 0) return null;
                 return (
-                  <div key={y} style={{ marginLeft: 16, marginTop: 4 }}>
-                    {y}: <strong>{count} commandes</strong>
-                  </div>
+                  <Group key={y} position="apart" ml="lg" mb="xs">
+                    <Text size="xs" color="dimmed">{y}</Text>
+                    <Badge size="xs" color={entry.name === 'Delivered' ? 'green' : 'red'}>
+                      {count} commandes
+                    </Badge>
+                  </Group>
                 );
               })}
             </React.Fragment>
           );
         })}
-      </div>
+      </Paper>
     );
   };
 
   return (
-    <div className="chart-container">
-      <h3 className="chart-title">Analyse par statut</h3>
+    <Paper p="md" shadow="sm">
+      <Group position="apart" mb="md">
+        <Group>
+          <ThemeIcon size="lg" radius="md" variant="light" color="blue">
+            <BarChart2 size={18} />
+          </ThemeIcon>
+          <Title order={3}>Order Status Analysis</Title>
+        </Group>
+        <Tooltip label="Click bars for details">
+          <ActionIcon><Info size={18} /></ActionIcon>
+        </Tooltip>
+      </Group>
+
+      <Grid gutter="md" mb="md" columns={3} align="stretch">
+        <Grid.Col span={1}>
+          <Card 
+            shadow="sm" 
+            p="xs" 
+            radius="md" 
+            withBorder 
+            style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: '100px' }}
+          >
+            <Group position="apart" mb="xs" px="xs" pt="xs">
+              <Text size="xs" weight={500} color="dimmed">Total Deliveries</Text>
+              <ThemeIcon color="green" variant="light" radius="xl" size="xs">
+                <PackageCheck size={12} />
+              </ThemeIcon>
+            </Group>
+            <Text size="md" weight={700} mt="auto" align="center">{totalDelivered}</Text>
+            <Group position="apart" mt="xs" px="xs" pb="xs">
+              <Text size="xs" color="dimmed">Peak Month</Text>
+              <Badge color="green" size="xs">{deliveredPeak.month}</Badge>
+            </Group>
+          </Card>
+        </Grid.Col>
+        
+        <Grid.Col span={1}>
+          <Card 
+            shadow="sm" 
+            p="xs" 
+            radius="md" 
+            withBorder 
+            style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: '100px' }}
+          >
+            <Group position="apart" mb="xs" px="xs" pt="xs">
+              <Text size="xs" weight={500} color="dimmed">Total Returns</Text>
+              <ThemeIcon color="red" variant="light" radius="xl" size="xs">
+                <PackageX size={12} />
+              </ThemeIcon>
+            </Group>
+            <Text size="md" weight={700} mt="auto" align="center">{totalReturned}</Text>
+            <Group position="apart" mt="xs" px="xs" pb="xs">
+              <Text size="xs" color="dimmed">Peak Month</Text>
+              <Badge color="red" size="xs">{returnedPeak.month || 'N/A'}</Badge>
+            </Group>
+          </Card>
+        </Grid.Col>
+        
+        <Grid.Col span={1}>
+          <Card 
+            shadow="sm" 
+            p="xs" 
+            radius="md" 
+            withBorder 
+            style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: '100px' }}
+          >
+            <Group position="apart" mb="xs" px="xs" pt="xs">
+              <Text size="xs" weight={500} color="dimmed">Return Rate</Text>
+              <ThemeIcon 
+                color={returnRate > 10 ? "red" : "green"} 
+                variant="light" 
+                radius="xl" 
+                size="xs"
+              >
+                {returnRate > 10 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+              </ThemeIcon>
+            </Group>
+            <Text 
+              size="md" 
+              weight={700} 
+              mt="auto" 
+              align="center"
+              color={returnRate > 10 ? "red" : "green"}
+            >
+              {returnRate}%
+            </Text>
+            <Group position="apart" mt="xs" px="xs" pb="xs">
+              <Text size="xs" color="dimmed">Status</Text>
+              <Badge 
+                color={returnRate > 10 ? "red" : "green"} 
+                size="xs"
+              >
+                {returnRate > 10 ? "High" : "Low"}
+              </Badge>
+            </Group>
+          </Card>
+        </Grid.Col>
+      </Grid>
+
       <BarChart
-        h={400}
+        h={300}
         data={chartData}
         dataKey="month"
         series={[
-          { name: 'Delivered', color: '#7dd87d' },
-          { name: 'Returned', color: '#bc2525' },
+          { name: 'Delivered', color: '#22c55e' },
+          { name: 'Returned', color: '#ef4444' },
         ]}
-        tooltipProps={{ shared: true, content: CustomTooltip }}
-        barSize={40}
-        yAxisProps={{ domain: [0, 'dataMax'], tickLine: true }}
+        tooltipProps={{ 
+          shared: true, 
+          content: CustomTooltip 
+        }}
+        barSize={60}
+        yAxisProps={{ 
+          domain: [0, 'dataMax'], 
+          tickLine: true,
+          axisLine: true,
+          stroke: '#E5E7EB',
+          tickFormatter: (value) => value.toFixed(0)
+        }}
+        xAxisProps={{
+          stroke: '#E5E7EB',
+        }}
+        gridProps={{
+          vertical: false,
+          horizontal: true,
+          stroke: '#E5E7EB',
+          opacity: 0.5
+        }}
         tickLine="y"
+        withLegend={false}
         style={{
           overflow: 'visible',
-          '--chart-cursor-fill': '#e5e1e1',
-          '--chart-grid-color': 'gray',
-          '--chart-text-color': 'gray',
+          '--chart-cursor-fill': '#f1f5f9',
+          '--chart-grid-color': '#e2e8f0',
+          '--chart-text-color': '#64748b',
         }}
       />
-      <div className="manual-legend">
-        <div className="legend-item">
-          <div className="legend-dot" style={{ backgroundColor: '#7dd87d' }} />
-          <span className="legend-label">Delivered</span>
-        </div>
-        <div className="legend-item">
-          <div className="legend-dot" style={{ backgroundColor: '#bc2525' }} />
-          <span className="legend-label">Returned</span>
-        </div>
-      </div>
-    </div>
+    </Paper>
   );
 }

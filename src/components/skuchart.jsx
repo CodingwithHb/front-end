@@ -4,6 +4,23 @@ import { BarChart } from '@mantine/charts';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import { 
+  Paper, 
+  Group, 
+  Text, 
+  Badge, 
+  Title, 
+  Tooltip, 
+  ActionIcon, 
+  ThemeIcon,
+  Grid,
+  Card
+} from '@mantine/core';
+import { 
+  BarChart2, 
+  Info, 
+  Box as BoxIcon 
+} from 'lucide-react';
 import '../styles/skuchart.css';
 
 dayjs.extend(isSameOrAfter);
@@ -66,61 +83,189 @@ export default function SKUChart() {
 
   const series = uniqueSkus.map((sku, i) => ({ name: sku, color: colorPalette[i % colorPalette.length] }));
 
+  // Additional statistics
+  const totalSkuOrders = {};
+  uniqueSkus.forEach(sku => {
+    totalSkuOrders[sku] = globalFiltered.filter(o => o.sku === sku).length;
+  });
+
+  const peakSkuMonth = {};
+  uniqueSkus.forEach(sku => {
+    const monthData = months.map(m => ({
+      month: m,
+      count: skuMonthlyData[m][sku] || 0
+    }));
+    const peakMonth = monthData.reduce((max, curr) => 
+      curr.count > max.count ? curr : max, 
+      { month: 'N/A', count: 0 }
+    );
+    peakSkuMonth[sku] = peakMonth;
+  });
+
   // 8) Tooltip personnalisé: détail par année si un SKU est sélectionné
   const CustomTooltip = ({ label, payload }) => {
     if (!payload || payload.length === 0) return null;
     return (
-      <div className="chartTooltip">
-        <strong>{label}</strong>
-        {filterSku === 'All'
-          ? payload.map((e, i) => (
-              <div key={i} style={{ color: e.color, marginTop: 5 }}>
-                {e.name} : <strong>{e.value} commandes</strong>
-              </div>
-            ))
-          : (
-            <>
-              {/* Total mensuel pour le SKU */}
-              {payload.map((e, i) => (
-                <div key={i} style={{ color: e.color, marginTop: 5 }}>
-                  {filterSku} : <strong>{e.value} commandes</strong>
-                </div>
-              ))}
-              {/* Détail par année */}
-              {uniqueYears.map((y, i) => {
-                const count = globalFiltered.filter(order => {
-                  const raw = order.delivered_date||order.return_date||order.shipped_at;
-                  return order.sku === filterSku &&
-                         dayjs(raw).format('MMM') === label &&
-                         dayjs(raw).year() === y;
-                }).length;
-                return (
-                  <div key={i} style={{ marginLeft: 16, marginTop: 4 }}>
-                    {y} : <strong>{count} commandes</strong>
-                  </div>
-                );
-              })}
-            </>
-          )
-        }
-      </div>
+      <Paper p="md" withBorder shadow="sm">
+        <Text weight={500} mb="xs">{label}</Text>
+        {payload.map((e, i) => (
+          <Group key={i} position="apart" mb="xs">
+            <Group>
+              <Badge 
+                color={filterSku === 'All' ? 'blue' : 'green'}
+                variant="light"
+              >
+                {e.name}
+              </Badge>
+              <Text>{e.value} commandes</Text>
+            </Group>
+          </Group>
+        ))}
+        {filterSku !== 'All' && uniqueYears.map((y, i) => {
+          const count = globalFiltered.filter(order => {
+            const raw = order.delivered_date||order.return_date||order.shipped_at;
+            return order.sku === filterSku &&
+                   dayjs(raw).format('MMM') === label &&
+                   dayjs(raw).year() === y;
+          }).length;
+          return count > 0 ? (
+            <Group key={i} position="apart" ml="lg" mb="xs">
+              <Text size="xs" color="dimmed">{y}</Text>
+              <Badge size="xs" color="green">{count} commandes</Badge>
+            </Group>
+          ) : null;
+        })}
+      </Paper>
     );
   };
 
   // 9) Rendu
   return (
-    <div className="chart-container">
-      <h3 className="chart-title">Analyse par SKU</h3>
+    <Paper p="md" shadow="sm">
+      <Group position="apart" mb="md">
+        <Group>
+          <ThemeIcon size="lg" radius="md" variant="light" color="blue">
+            <BarChart2 size={18} />
+          </ThemeIcon>
+          <Title order={3}>SKU Analysis</Title>
+        </Group>
+        <Tooltip label="Click bars for details">
+          <ActionIcon><Info size={18} /></ActionIcon>
+        </Tooltip>
+      </Group>
+
+      <Group position="center" mb="md" spacing="xl">
+        {uniqueSkus.slice(0, 3).map((sku, index) => {
+          // Calculate additional statistics
+          const skuOrders = globalFiltered.filter(o => o.sku === sku);
+          const deliveredOrders = skuOrders.filter(o => o.status === 'Delivered').length;
+          const returnedOrders = skuOrders.filter(o => o.status === 'Return' || o.status === 'Returned').length;
+          const returnRate = skuOrders.length > 0 
+            ? ((returnedOrders / skuOrders.length) * 100).toFixed(1) 
+            : '0.0';
+
+          return (
+            <Card 
+              key={sku}
+              shadow="sm" 
+              p="md" 
+              radius="md" 
+              withBorder 
+              style={{ 
+                width: '350px', 
+                display: 'flex', 
+                flexDirection: 'column',
+                padding: '15px'
+              }}
+            >
+              <Group position="apart" mb="xs">
+                <Text size="sm" weight={600} color="dark">{sku}</Text>
+                <ThemeIcon 
+                  color={colorPalette[index % colorPalette.length].replace('#', '')} 
+                  variant="light" 
+                  radius="xl" 
+                  size="sm"
+                >
+                  <BoxIcon size={14} />
+                </ThemeIcon>
+              </Group>
+              
+              <Text 
+                size="xl" 
+                weight={700} 
+                mb="md"
+                color={colorPalette[index % colorPalette.length]}
+              >
+                {totalSkuOrders[sku]}
+              </Text>
+              
+              <Group position="apart" mb="xs">
+                <Text size="xs" color="dimmed">Delivered</Text>
+                <Badge color="green" size="sm">{deliveredOrders}</Badge>
+              </Group>
+              
+              <Group position="apart" mb="xs">
+                <Text size="xs" color="dimmed">Returns</Text>
+                <Badge color="red" size="sm">{returnedOrders}</Badge>
+              </Group>
+              
+              <Group position="apart" mb="xs">
+                <Text size="xs" color="dimmed">Peak Month</Text>
+                <Badge 
+                  color={colorPalette[index % colorPalette.length].replace('#', '')} 
+                  size="sm"
+                >
+                  {peakSkuMonth[sku].month}
+                </Badge>
+              </Group>
+              
+              <Group position="apart">
+                <Text size="xs" color="dimmed">Returns Rate</Text>
+                <Badge 
+                  color={returnRate > 10 ? "red" : "green"} 
+                  size="sm"
+                >
+                  {returnRate}% Returns
+                </Badge>
+              </Group>
+            </Card>
+          );
+        })}
+      </Group>
+
       <BarChart
-        h={410}
+        h={300}
         data={chartData}
         dataKey="month"
         series={series}
         tooltipProps={{ shared: true, content: CustomTooltip }}
-        barSize={50}
-        yAxisProps={{ domain: [0, 'dataMax'], tickLine: true }}
+        barSize={60}
+        yAxisProps={{ 
+          domain: [0, 'dataMax'], 
+          tickLine: true,
+          axisLine: true,
+          stroke: '#E5E7EB',
+          tickFormatter: (value) => value.toFixed(0)
+        }}
+        xAxisProps={{
+          stroke: '#E5E7EB',
+        }}
+        gridProps={{
+          vertical: false,
+          horizontal: true,
+          stroke: '#E5E7EB',
+          opacity: 0.5
+        }}
         tickLine="y"
+        withLegend={false}
+        style={{
+          overflow: 'visible',
+          '--chart-cursor-fill': '#f1f5f9',
+          '--chart-grid-color': '#e2e8f0',
+          '--chart-text-color': '#64748b',
+        }}
       />
+
       <div className="sku-legend">
         {series.map(({ name, color }) => (
           <div key={name} className="legend-item">
@@ -129,6 +274,6 @@ export default function SKUChart() {
           </div>
         ))}
       </div>
-    </div>
+    </Paper>
   );
 }

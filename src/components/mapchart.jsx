@@ -28,7 +28,7 @@ import {
   ThemeIcon,
   Timeline
 } from '@mantine/core';
-import { MapPin, Info, TrendingUp, MapIcon, Calendar, Award, BoxIcon, ArrowUp, ChevronRight, Building2, Clock, Star, TrendingUp as TrendIcon } from 'lucide-react';
+import { MapPin, Info, TrendingUp, MapIcon, Calendar, Award, BoxIcon, ArrowUp, ChevronRight, Building2, Clock, Star, TrendingUp as TrendIcon, BarChart2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
@@ -194,10 +194,22 @@ export default function MapChart() {
   return (
     <Paper p="md" shadow="sm">
       <Group position="apart" mb="md">
+        <ThemeIcon size="lg" radius="md" variant="light" color="blue">
+          <BarChart2 size={18} />
+        </ThemeIcon>
         <Title order={3}>Regional Orders</Title>
         <Tooltip label="Click pins for details"><ActionIcon><Info size={18}/></ActionIcon></Tooltip>
       </Group>
-      <ComposableMap projection="geoMercator" projectionConfig={{ scale: 900, center: [50, 25] }}>
+      <ComposableMap 
+        projection="geoMercator" 
+        projectionConfig={{ scale: 900, center: [50, 25] }}
+        style={{
+          minHeight: '300px',
+          maxHeight: '433px',
+          height: '700px',
+          width: '100%'
+        }}
+      >
         <ZoomableGroup zoom={pos.zoom} center={pos.coordinates} onMoveEnd={setPos}>
           <Geographies geography={geoUrl}>{({ geographies }) => geographies.map(g => {
             const code = Object.entries(countryMapping).find(([, n]) => n === g.properties.name)?.[0];

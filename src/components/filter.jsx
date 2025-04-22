@@ -1,28 +1,47 @@
-import React, { useState } from 'react'
-import Import from './import'
-import '../styles/filter.css'
-import { ImportIcon } from 'lucide-react' // ✅ Lucide icon
+import React, { useState } from 'react';
+import { 
+  Button, 
+  Modal, 
+  Group, 
+  ThemeIcon, 
+  Text 
+} from '@mantine/core';
+import { ImportIcon, X } from 'lucide-react';
+import Import from './import';
+import { notifications } from '@mantine/notifications';
 
 function Filter() {
-  const [showImportModal, setShowImportModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false);
+
+  const handleImportSuccess = () => {
+    notifications.show({
+      title: 'Import Successful',
+      message: 'Your orders have been imported successfully.',
+      color: 'green',
+      icon: <ImportIcon size={16} />
+    });
+  };
 
   return (
-    <div className="import-only-wrapper">
-      <button
-        className="action-button import-button"
+    <Group position="apart" py="md" >
+      <Button
+        variant="light"
+        color="blue"
         onClick={() => setShowImportModal(true)}
-        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
       >
-        <ImportIcon size={18} />
-        Import
-      </button>
+        <Group spacing="xs">
+          <ImportIcon size={18} />
+          <Text style={{fontWeight:"bold"}}>Import Orders</Text>
+        </Group>
+      </Button>
 
       <Import
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
+        onImportSuccess={handleImportSuccess}
       />
-    </div>
-  )
+    </Group>
+  );
 }
 
-export default Filter
+export default Filter;

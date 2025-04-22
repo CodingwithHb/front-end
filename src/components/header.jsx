@@ -1,30 +1,47 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import '../styles/header.css';
-
+import { 
+  Paper, 
+  Grid, 
+  Group, 
+  Text, 
+  ThemeIcon, 
+  Container,
+  Box,
+  Title
+} from '@mantine/core';
+import { 
+  PackageCheck, 
+  Package, 
+  Truck
+} from 'lucide-react';
 import { useSelector } from 'react-redux';
 import Filter from './filter';
 import Filtrage from './filtrage';
 
-
 function Header() {
-  const [statistics, setStatistics] = useState({});
+  const [statistics, setStatistics] = useState({
+    total_orders: 0,
+    total_customers: 0,
+    delivered_orders: 0,
+    returned_orders: 0
+  });
   const reduxOrders = useSelector(state => state.orders);
 
-  const fetchStatistics = (params = {}) => {
-    axios.get('http://localhost:8000/api/statistics', { params })
-      .then((response) => { 
-        const fetchedOrders = response.data.orders;
-        setStatistics({
-          total_orders: fetchedOrders.length,
-          total_customers: new Set(fetchedOrders.map(order => order.customer_name)).size,
-          delivered_orders: fetchedOrders.filter(order => order.status === 'Delivered').length,
-          returned_orders: fetchedOrders.filter(order => order.status === 'Return').length
-        });
-      })
-      .catch((error) => { 
-        console.log('Error:', error); 
+  const fetchStatistics = async (params = {}) => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/statistics', { params });
+      const fetchedOrders = response.data.orders;
+      
+      setStatistics({
+        total_orders: fetchedOrders.length,
+        total_customers: new Set(fetchedOrders.map(order => order.customer_name)).size,
+        delivered_orders: fetchedOrders.filter(order => order.status === 'Delivered').length,
+        returned_orders: fetchedOrders.filter(order => order.status === 'Return').length
       });
+    } catch (error) {
+      console.error('Error fetching statistics:', error);
+    }
   };
 
   // Initial fetch on mount
@@ -32,37 +49,92 @@ function Header() {
     fetchStatistics();
   }, []);
 
-  // Re-fetch statistics when reduxOrders change (after a new import, for example)
+  // Re-fetch statistics when reduxOrders change
   useEffect(() => {
     if (reduxOrders && reduxOrders.length > 0) {
       fetchStatistics();
     }
   }, [reduxOrders]);
 
+  const StatisticCard = ({ icon, title, value, color }) => (
+    <Paper 
+      withBorder 
+      radius="md" 
+      p="md" 
+      sx={(theme) => ({
+        backgroundColor: theme.white,
+        boxShadow: theme.shadows.xs,
+        transition: 'transform 0.2s ease',
+        '&:hover': {
+          transform: 'translateY(-5px)'
+        }
+      })}
+    >
+      <Group>
+        <ThemeIcon variant="light" color={color} size="lg" radius="md">
+          {icon}
+        </ThemeIcon>
+        <div>
+          <Text size="xs" color="dimmed" transform="uppercase">
+            {title}
+          </Text>
+          <Text weight={700} size="xl">
+            {value.toLocaleString()}
+          </Text>
+        </div>
+      </Group>
+    </Paper>
+  );
+
+  // Séparer le composant de filtre de son container pour le rendre inline
+  const renderImportButton = () => {
+    // On n'utilise que le composant Filter sans son wrapper Group
+    return <Filter onStatisticsUpdate={fetchStatistics} statistics={statistics} />;
+  };
+
   return (
-    <div>
-      <Filter onStatisticsUpdate={fetchStatistics} statistics={statistics} />
- 
-      <div className="container">
-        <div className="statistics-card">
-          <img src="/orders.svg" alt="orders" />
-          <h2>Total Order</h2>
-          <p>{statistics.total_orders?.toLocaleString()}</p>
-        </div>
-        <div className="statistics-card">
-          <img src="/Delivered.svg" alt="Delivered" />
-          <h2>Total Orders Delivered</h2>
-          <p>{statistics.delivered_orders?.toLocaleString()}</p>
-        </div>
-        <div className="statistics-card">
-          <img src="/Return.svg" alt="Return" />
-          <h2>Total Orders Returned</h2>
-          <p>{statistics.returned_orders?.toLocaleString()}</p>
-        </div>
+    <Container size="xl" px="md">
+      {/* Dashboard Title */}
+      <Title order={2} color="blue" mb="md">
+        Orders Dashboard
+      </Title>
+      
+      {/* Action Buttons Side by Side */}
+      <Group position="left" spacing="md" mb="md">
         <Filtrage />
-      </div>
-    
-    </div>
+        {renderImportButton()}
+      </Group>
+      
+      {/* Statistics Cards */}
+      <Grid gutter="md" mb="md">
+        <Grid.Col span={4}>
+          <StatisticCard 
+            icon={<Package size={20} />}
+            title="Total Orders"
+            value={statistics.total_orders}
+            color="blue"
+          />
+        </Grid.Col>
+        
+        <Grid.Col span={4}>
+          <StatisticCard 
+            icon={<Truck size={20} />}
+            title="Delivered Orders"
+            value={statistics.delivered_orders}
+            color="green"
+          />
+        </Grid.Col>
+        
+        <Grid.Col span={4}>
+          <StatisticCard 
+            icon={<PackageCheck size={20} />}
+            title="Returned Orders"
+            value={statistics.returned_orders}
+            color="red"
+          />
+        </Grid.Col>
+      </Grid>
+    </Container>
   );
 }
 
