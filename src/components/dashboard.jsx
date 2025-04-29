@@ -1,21 +1,18 @@
 import React from 'react';
-import { 
-  useSelector 
-} from 'react-redux';
-import { 
-  Container, 
-  Grid, 
-  Paper, 
-  Text, 
-  Group, 
-  ThemeIcon 
+import { useSelector } from 'react-redux';
+import {
+  Container,
+  Paper,
+  Text,
+  Group,
+  ThemeIcon
 } from '@mantine/core';
-import { 
-  BarChart2, 
-  MapPin, 
-  Package, 
-  Truck, 
-  Users 
+import {
+  BarChart2,
+  MapPin,
+  Package,
+  Truck,
+  Users
 } from 'lucide-react';
 
 import Header from './header';
@@ -25,15 +22,41 @@ import SKUChart from './skuchart';
 import { GenderChart } from './genderchart';
 import NoData from './nodata';
 
+// Add normal CSS styles with media query
+const styles = `
+  .chart-grid {
+    display: flex;
+    flex-wrap: wrap;
+    margin: -8px;
+  }
+  
+  .chart-item {
+    width: calc(50% - 16px);
+    margin: 8px;
+  }
+  
+  @media (max-width: 989px) {
+    .chart-grid {
+      display: block;
+      margin: 0;
+    }
+    
+    .chart-item {
+      width: 100%;
+      margin: 0 0 16px 0;
+    }
+  }
+`;
+
 function Dashboard() {
   const orders = useSelector((state) => state.orders);
   const isDataLoaded = orders && orders.length > 0;
 
   const ChartCard = ({ title, icon, children }) => (
-    <Paper 
-      withBorder 
-      radius="md" 
-      p="md" 
+    <Paper
+      withBorder
+      radius="md"
+      p="md"
       sx={(theme) => ({
         backgroundColor: theme.white,
         boxShadow: theme.shadows.xs,
@@ -62,35 +85,29 @@ function Dashboard() {
 
   return (
     <Container size="xl" px="md">
+      {/* Add style tag with normal CSS */}
+      <style>{styles}</style>
+      
       <Header />
-   <br />
+      <br /><br /> <br />
       {isDataLoaded ? (
-        <Grid gutter="md">
-          <Grid.Col span={6}>
-            
-            
-              <Chart />
+        <div className="chart-grid">
+          <div className="chart-item">
+            <Chart />
+          </div>
           
-          </Grid.Col>
-
-          <Grid.Col span={6}>
-
-              <MapChart />
-         
-          </Grid.Col>
-
-          <Grid.Col span={6}>
-            
-              <SKUChart />
-           
-          </Grid.Col>
-
-          <Grid.Col span={6}>
-           
-              <GenderChart />
-            
-          </Grid.Col>
-        </Grid>
+          <div className="chart-item">
+            <MapChart />
+          </div>
+          
+          <div className="chart-item">
+            <SKUChart />
+          </div>
+          
+          <div className="chart-item">
+            <GenderChart />
+          </div>
+        </div>
       ) : (
         <NoData />
       )}
